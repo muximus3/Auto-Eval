@@ -106,13 +106,13 @@ def log_score_results(eval_results_df: pd.DataFrame):
     if 'model' in eval_results_df.keys():
         print( eval_results_df.groupby('model')['score'])
         score_models = eval_results_df.groupby('model')['score'].apply(lambda x: f'{x.sum():.1f}/{len(x)}')
-        print(f'{"-"*20} SCORE BY MODEL {"-"*20}\n{score_models.to_markdown()}')
+        print(f'{"-"*20} Scores by Model {"-"*20}\n{score_models.to_markdown()}')
         if 'category' in eval_results_df.keys():
             score_category = eval_results_df.groupby([
                 'model', 'category'
             ])['score'].apply(lambda x: f'{x.sum():.1f}/{len(x)}').reset_index().sort_values(by='model')
             print(
-                f'\n{"-"*20} SCORE BY CATEGORY {"-"*20}\n{score_category.to_markdown(index=False)}'
+                f'\n{"-"*20} Scores by Model and Task Category {"-"*20}\n{score_category.to_markdown(index=False)}'
             )
 
 def save_results(eval_results_df: pd.DataFrame, output_path: str):

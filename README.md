@@ -54,8 +54,10 @@ auto-eval line --config_file CHANGE_TO_YOUR_CONFIG_PATH \
 --answers 20 100 21 18 \
 --target "Janet sells 16 - 3 - 4 = <<16-3-4=9>>9 duck eggs a day. She makes 9 * 2 = $<<9*2=18>>18 every day at the farmer’s market. #### 18"
 ```
-Print output:
+<details> <summary>Print output:</summary>
+
 ```text
+
 Using prompt template:
  {
   "eval_with_target_instruction": "Please evaluate and comment each [Candidate answer] based on the [Correct answer]. Then output all [Candidate answer] scores (0-1) in a summary format of {\"number\": \"score\"}, e.g, {\"A\": \"0.2\", \"B\": \"0.8\"}",
@@ -112,6 +114,9 @@ Summary:
 SCORE:
 [0.0, 0.0, 0.2, 1.0]
 ```
+</details>
+
+
 #### Evaluate one file
 ```sh
 auto-eval-file --config_file CHANGE_TO_YOUR_CONFIG_PATH \
@@ -119,7 +124,29 @@ auto-eval-file --config_file CHANGE_TO_YOUR_CONFIG_PATH \
 --output_path  \
 --model gpt-3.5-turbo 
 ```
+<details open> <summary> Print output</summary>
 
+
+prompts and responses detail...
+
+-------------------- Scores by Model --------------------
+| model                      | score   |
+|:---------------------------|:--------|
+| model A       | 1.5/3   |
+| model B | 1.3/3   |
+| model C          | 0.0/3   |
+
+-------------------- Scores by Model and Task Category --------------------
+| model                      | category   | score   |
+|:---------------------------|:-----------|:--------|
+| model A       | Common sense QA   | 1.5/2   |
+| model A       | Elementary arithmetic   | 0.0/1   |
+| model B | Common sense QA   | 1.3/2   |
+| model B | Elementary arithmetic   | 0.0/1   |
+| model C           | Common sense QA   | 0.0/2   |
+| model C           | Elementary arithmetic   | 0.0/1   |
+
+</details>
 
 ### Arguments Definitions:
 
