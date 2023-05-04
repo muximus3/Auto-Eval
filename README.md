@@ -130,7 +130,7 @@ auto-eval file --config_file CHANGE_TO_YOUR_CONFIG_PATH \
 --output_path  \
 --model gpt-3.5-turbo 
 ```
-<details> <summary>Click to see log output example:</summary>
+<details open> <summary>Click to see log output example:</summary>
 
 <br>
 prompts and responses detail...
