@@ -59,7 +59,7 @@ auto-eval line --config_file CHANGE_TO_YOUR_CONFIG_PATH \
 --answers 20 100 21 18 \
 --target "Janet sells 16 - 3 - 4 = <<16-3-4=9>>9 duck eggs a day. She makes 9 * 2 = $<<9*2=18>>18 every day at the farmer’s market. #### 18"
 ```
-<details> <summary>Click to see log output example:</summary>
+<details> <summary>log output example:</summary>
 
 ```text
 
@@ -130,7 +130,7 @@ auto-eval file --config_file CHANGE_TO_YOUR_CONFIG_PATH \
 --output_path  \
 --model gpt-3.5-turbo 
 ```
-<details open> <summary>Click to see log output example:</summary>
+<details open> <summary>log output example:</summary>
 
 <br>
 prompts and responses detail...
@@ -138,19 +138,19 @@ prompts and responses detail...
 -------------------- Scores by Model --------------------
 | model                      | score   |
 |:---------------------------|:--------|
-| model A       | 1.5/3   |
-| model B | 1.3/3   |
-| model C          | 0.0/3   |
+| model A       | 81.5/100   |
+| model B |91.3/100   |
+| model C          | 80.0/100   |
 
 -------------------- Scores by Model and Task Category --------------------
 | model                      | category   | score   |
 |:---------------------------|:-----------|:--------|
-| model A       | Common sense QA   | 1.5/2   |
-| model A       | Elementary arithmetic   | 0.0/1   |
-| model B | Common sense QA   | 1.3/2   |
-| model B | Elementary arithmetic   | 0.0/1   |
-| model C           | Common sense QA   | 0.0/2   |
-| model C           | Elementary arithmetic   | 0.0/1   |
+| model A       | Common sense QA   | 15.5/20   |
+| model A       | Elementary arithmetic   | 10.0/15   |
+| model B | Common sense QA   | 17.3/20   |
+| model B | Elementary arithmetic   | 11.0/15   |
+| model C           | Common sense QA   | 14.7/20   |
+| model C           | Elementary arithmetic   | 9.2/15   |
 
 
 </details>
