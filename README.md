@@ -125,7 +125,7 @@ SCORE:
 
 #### Evaluate one file
 ```sh
-auto-eval-file --config_file CHANGE_TO_YOUR_CONFIG_PATH \
+auto-eval file --config_file CHANGE_TO_YOUR_CONFIG_PATH \
 --eval_data_path   \
 --output_path  \
 --model gpt-3.5-turbo 
