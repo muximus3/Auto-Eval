@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="one-eval",
+    name="auto-eval",
     version="0.1.2",
     packages=find_packages(),
     package_data={
@@ -17,14 +17,13 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "one-eval-file=commands.one_api_eval_file:main",
-            "one-eval-line=commands.one_api_eval_one:main",
+            "auto-eval = commands.auto_eval:main",
         ]
     },
     description="Using only one line of commmands to evaluate multiple models",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/muximus3/OneEval",
+    url="https://github.com/muximus3/Auto-Eval",
     classifiers=[
         "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: MIT License",

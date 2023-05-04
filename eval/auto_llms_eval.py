@@ -81,6 +81,10 @@ def prepare_eval_data(eval_data: pd.DataFrame, eval_categories: Optional[List[st
             eval_data['input'], sep=' ')
     elif len({'prompt', 'output'} - set(eval_data.keys())) == 0:
         eval_data['quesion'] = eval_data['prompt'].copy()
+    elif len({'prompt', 'target'} - set(eval_data.keys())) == 0:
+        eval_data['output'] = eval_data['target'].copy()
+    elif len({'question', 'answer'} - set(eval_data.keys())) == 0:
+        eval_data['output'] = eval_data['answer'].copy()
     elif len({'question', 'output'} - set(eval_data.keys())) == 0:
         pass
     else:
@@ -112,7 +116,7 @@ def log_score_results(eval_results_df: pd.DataFrame):
             )
 
 def save_results(eval_results_df: pd.DataFrame, output_path: str):
-    print(f'Saving score result: {output_path}')
+    print(f'Saving evaluation results: {output_path}')
     df_saver(eval_results_df, output_path)
     print(f'Saved successfully.')
 

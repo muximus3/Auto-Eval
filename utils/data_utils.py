@@ -22,7 +22,7 @@ def df_saver(df: pd.DataFrame, data_path):
     if data_path.endswith('jsonl'):
         df.to_json(df, orient='records', force_ascii=False, lines=True)
     elif data_path.endswith('xlsx'):
-        df2xlsx(df, data_path)
+        df2xlsx(df, data_path, index=False)
     elif data_path.endswith('csv'):
         df.to_csv(data_path)
     else:

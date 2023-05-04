@@ -39,7 +39,7 @@ class EvalPrompt(Prompter):
 
         instruction_header = template_data.get('header', '')
         if verbose:
-            print(f'Using prompt templat:\n {json.dumps(template_data, sort_keys=True, indent=2)}')
+            print(f'Using prompt template:\n {json.dumps(template_data, sort_keys=True, indent=2)}')
         return cls(eval_with_target_template, eval_without_target_template,
                    eval_with_target_instruction,
                    eval_without_target_instruction, score_output_type,
