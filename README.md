@@ -59,7 +59,7 @@ auto-eval line --config_file CHANGE_TO_YOUR_CONFIG_PATH \
 --answers 20 100 21 18 \
 --target "Janet sells 16 - 3 - 4 = <<16-3-4=9>>9 duck eggs a day. She makes 9 * 2 = $<<9*2=18>>18 every day at the farmer’s market. #### 18"
 ```
-<details> <summary>Print output:</summary>
+<details> <summary>Click to see log output example:</summary>
 
 ```text
 
@@ -129,7 +129,7 @@ auto-eval-file --config_file CHANGE_TO_YOUR_CONFIG_PATH \
 --output_path  \
 --model gpt-3.5-turbo 
 ```
-<details open> <summary> Print output</summary>
+<details> <summary>Click to see log output example:</summary>
 
 
 prompts and responses detail...
@@ -153,12 +153,12 @@ prompts and responses detail...
 
 </details>
 
-### Arguments Definitions:
+## Arguments Definitions:
 
-#### Shared arguments
-`--config_file` string <span style="color:orange">Required</span> <br>A local configuration file containing API key information.
+### Shared arguments
+`--config_file` string ${\color{orange}\text{Required}}$ <br>A local configuration file containing API key information.
 
- <span id="jump">`--template_path`</span> string <span style="color:grey">Optional</span> <br> A cuatom template json file path, Please refer to the default prompt template for modification. You can define the position of instruction at the beginning or end, define the content of instruction, arrange the output of the model to be evaluated, and specify output formats. Currently, only JSON format parsing or score mode separated by spaces are supported as output formats. For example: {"A":0,"B": 0.1} or 0 0.1.<br>
+ <span id="jump">`--template_path`${\color{grey}\text{Optional}}$ <br> A cuatom template json file path, Please refer to the default prompt template for modification. You can define the position of instruction at the beginning or end, define the content of instruction, arrange the output of the model to be evaluated, and specify output formats. Currently, only JSON format parsing or score mode separated by spaces are supported as output formats. For example: {"A":0,"B": 0.1} or 0 0.1.<br>
 Would use the template provided below if there is no specific one available.
 ```json
 {
@@ -170,42 +170,43 @@ Would use the template provided below if there is no specific one available.
 ```
 
 
-`--verbose` bool <span style="color:grey">Optional</span> Defaults to True <br> Whether to print every prompt and response evaluation detail.
+`--verbose` bool ${\color{grey}\text{Optional}}$ Defaults to True <br> Whether to print every prompt and response evaluation detail.
 
-`--model` string <span style="color:grey">Optional</span>  Defaults to GPT-3.5-turbo or Claude-v1.3 depends on `api_type`<br> Which model to perform evaluation.
+`--model` string ${\color{grey}\text{Optional}}$  Defaults to GPT-3.5-turbo or Claude-v1.3 depends on `api_type`<br> Which model to perform evaluation.
 
-`--temperature` number <span style="color:grey">Optional</span> Defaults to 1 <br>What sampling temperature to use.  Higher values like 1 will make the output more random, while lower values like 0.1 will make it more focused and deterministic.
+`--temperature` number ${\color{grey}\text{Optional}}$ Defaults to 1 <br>What sampling temperature to use.  Higher values like 1 will make the output more random, while lower values like 0.1 will make it more focused and deterministic.
 
-`--max_new_tokens` integer <span style="color:grey">Optional</span> Defaults to 2048 <br>
+`--max_new_tokens` integer ${\color{grey}\text{Optional}}$ Defaults to 2048 <br>
 The maximum number of tokens to generate in the chat completion.
 The total length of input tokens and generated tokens is limited by the model's context length.
 
-#### Evaluate one sample arguments
+### Evaluate one sample arguments
 
-`--prompt` string <span style="color:orange">Required</span> <br>
+
+`--prompt` string ${\color{orange}\text{Required}}$ <br>
 The question that predicted by LLMs, e.g., A math question would be like: "1+1=?".
 
-`--answers` array <span style="color:orange">Required</span> <br>
+`--answers` array ${\color{orange}\text{Required}}$ <br>
 LLMs outputs correspond to the question in the prompt, answers must be separated by space. e.g., A set of four answers would look like this: 1 0 -1 2
 
-`--target` <span style="color:grey">Optional</span> Defaults to \'\'<br> The correct answer for the question. The prompt will be different depending on whether the target is provided, e.g., if no target is provided, the model is asked to solve the question first and then evaluate each candidate answer.
+`--target` ${\color{grey}\text{Optional}}$ Defaults to \'\'<br> The correct answer for the question. The prompt will be different depending on whether the target is provided, e.g., if no target is provided, the model is asked to solve the question first and then evaluate each candidate answer.
 
-#### Evaluate file arguments
+### Evaluate file arguments
 
-`--eval_data_path`: string <span style="color:orange">Required</span> <br>The file path of the input data to be evaluated.<br>
+`--eval_data_path`: string ${\color{orange}\text{Required}}$ <br>The file path of the input data to be evaluated.<br>
 
 **Input File:**
 The input file currently supports files with .json, .jsonl, .csv, and .xlsx extensions. The header of the file can be one of the following types: {'instruction', 'input', ‘output’}, {'prompt', 'output'}, {'prompt', 'target'}, {'question', 'answer'}, or {'question', 'output'}.
 
-`--output_path`: string <span style="color:orange">Required</span> <br>The output file path for evaluation results.
+`--output_path`: string ${\color{orange}\text{Required}}$ <br>The output file path for evaluation results.
 
 **Output File:**
 The output file can be specified as a .json, .jsonl, .csv or.xlsx extension. If it contains a field called "model", scores and statistics will be grouped based on this field. If it also contains fields called "model" and "category", scores and statistics will be grouped based on both fields. Any other fields will not be processed; the output will include all columns from the original input along with evaluation scores and explanations.
 
-`--eval_categories`: array <span style="color:grey">Optional</span> Defaults to null <br> Choose specific types of question categories to evaluate. This only works when the input file contains a "category" column corresponding to each question.
+`--eval_categories`: array ${\color{grey}\text{Optional}}$ Defaults to null <br> Choose specific types of question categories to evaluate. This only works when the input file contains a "category" column corresponding to each question.
 
-`--sample_num`: number <span style="color:grey">Optional</span> Defaults to 0<br>Sample number of prompt-answer pairs to evaluate.
+`--sample_num`: number ${\color{grey}\text{Optional}}$ Defaults to 0<br>Sample number of prompt-answer pairs to evaluate.
 
-`--interval`: number <span style="color:grey">Optional</span> Defaults to 1 <br> Sleep interval in seconds between each request to avoid exceeding the request rate limit. A larger value like 10 is recommended for GPT-4.
+`--interval`: number ${\color{grey}\text{Optional}}$ Defaults to 1 <br> Sleep interval in seconds between each request to avoid exceeding the request rate limit. A larger value like 10 is recommended for GPT-4.
 
-`--retry`:  <span style="color:grey">Optional</span> Defaults to True <br> Whether to retry once for all failed requests. Failed requests may be due to reasons such as exceeding API request frequency, incorrect answer format parsing, or network failure.
+`--retry`:  ${\color{grey}\text{Optional}}$ Defaults to True <br> Whether to retry once for all failed requests. Failed requests may be due to reasons such as exceeding API request frequency, incorrect answer format parsing, or network failure.
