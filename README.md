@@ -119,6 +119,7 @@ Summary:
 SCORE:
 [0.0, 0.0, 0.2, 1.0]
 ```
+
 </details>
 
 
@@ -131,7 +132,7 @@ auto-eval-file --config_file CHANGE_TO_YOUR_CONFIG_PATH \
 ```
 <details> <summary>Click to see log output example:</summary>
 
-
+```text
 prompts and responses detail...
 
 -------------------- Scores by Model --------------------
@@ -150,6 +151,7 @@ prompts and responses detail...
 | model B | Elementary arithmetic   | 0.0/1   |
 | model C           | Common sense QA   | 0.0/2   |
 | model C           | Elementary arithmetic   | 0.0/1   |
+```
 
 </details>
 
