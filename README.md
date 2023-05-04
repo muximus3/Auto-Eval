@@ -158,7 +158,7 @@ prompts and responses detail...
 ### Shared arguments
 `--config_file` string ${\color{orange}\text{Required}}$ <br>A local configuration file containing API key information.
 
- <span id="jump">`--template_path`${\color{grey}\text{Optional}}$ <br> A cuatom template json file path, Please refer to the default prompt template for modification. You can define the position of instruction at the beginning or end, define the content of instruction, arrange the output of the model to be evaluated, and specify output formats. Currently, only JSON format parsing or score mode separated by spaces are supported as output formats. For example: {"A":0,"B": 0.1} or 0 0.1.<br>
+ <span id="jump">`--template_path`${\color{grey}\text{Optional}}$ <br> A cuatom template json file path, Please refer to the default prompt template for modification. You can define the position of instruction at the beginning or end, define the content of instruction, arrange the output of the model to be evaluated, and specify output formats. Currently, only JSON format parsing or score mode separated by spaces are supported as output formats. For example: `{"A":0,"B": 0.1}` or 0 0.1.<br>
 Would use the template provided below if there is no specific one available.
 ```json
 {
@@ -195,12 +195,12 @@ LLMs outputs correspond to the question in the prompt, answers must be separated
 
 `--eval_data_path`: string ${\color{orange}\text{Required}}$ <br>The file path of the input data to be evaluated.<br>
 
-**Input File:**
-The input file currently supports files with .json, .jsonl, .csv, and .xlsx extensions. The header of the file can be one of the following types: {'instruction', 'input', ‘output’}, {'prompt', 'output'}, {'prompt', 'target'}, {'question', 'answer'}, or {'question', 'output'}.
+**Input file format:**
+The input file currently supports files with .json, .jsonl, .csv, and .xlsx extensions. The header of the file can be one of the following types: `{'instruction', 'input', ‘output’}`, `{'prompt', 'output'}`, `{'prompt', 'target'}`, `{'question', 'answer'}`, or `{'question', 'output'}`.
 
 `--output_path`: string ${\color{orange}\text{Required}}$ <br>The output file path for evaluation results.
 
-**Output File:**
+**Output File format:**
 The output file can be specified as a .json, .jsonl, .csv or.xlsx extension. If it contains a field called "model", scores and statistics will be grouped based on this field. If it also contains fields called "model" and "category", scores and statistics will be grouped based on both fields. Any other fields will not be processed; the output will include all columns from the original input along with evaluation scores and explanations.
 
 `--eval_categories`: array ${\color{grey}\text{Optional}}$ Defaults to null <br> Choose specific types of question categories to evaluate. This only works when the input file contains a "category" column corresponding to each question.
