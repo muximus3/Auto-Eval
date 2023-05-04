@@ -1,8 +1,14 @@
 # Auto-Eval
 
-**Auto-Eval** utilizes ChatGPT (GPT-3.5-turbo), GPT-4, and Claude's API to evaluate language models with a single command. By default, it assesses the accuracy of language models in various aspects, including mathematical calculations, question answering, translation, classification, and more. The prompt has been thoroughly tested to maximize evaluation accuracy while using as few words as possible to save token budget, as GPT-4 is quite expensive💰.
+**Auto-Eval** utilizes ChatGPT (GPT-3.5-turbo), GPT-4, and Claude's API to evaluate language models with a single command. 
 
-You can also customize the prompt by adjusting it based on templates. We have integrated various GPT APIs into a unified interface using the [One-API-Tool](https://github.com/muximus3/OneAPI) library for maximum customization and further development.
+By default, it assesses the accuracy of language models in various areas such as mathematical calculations, question answering, translation, classification and more. 
+
+The evaluation prompt has been extensively tested to ensure maximum accuracy even when using GPT-3.5 while minimizing word usage to save token budget since GPT-4 can be quite expensive 💰.
+
+To further personalize the prompt, you can modify it using the default templates as a basis. For additional information, please refer to the documentation provided below ([click here](#jump)).
+
+Our unified interface integrates multiple GPT APIs using the [One-API-Tool](https://github.com/muximus3/OneAPI) library, allowing for maximum customization and future development.
 
 
 ## Installation
@@ -11,6 +17,12 @@ pip install -U auto-eval
 ```
 
 ## Usage
+To utilize this repository, you must first obtain API keys from OpenAI, Microsoft Azure, or Anthropic. To acquire your OpenAI API key, visit their website at https://platform.openai.com/account/api-keys. For your Claude API key, go to the Anthropic website at https://console.anthropic.com/account/keys.
+
+Additionally, ensure that the base API for sending requests is provided. If necessary, specify a proxy URL such as "https://your_proxy_domain/v1". Relevant information for Azure APIs can be found on the Azure resource dashboard with an API format of `https://{your_organization}.openai.azure.com/`.
+
+The currently supported values for `api_type` are "open_ai", "azure", or "claude".
+
 ### 1. Set up your API Key information in the local configuration file.
 
 OpenAI config:
@@ -37,13 +49,6 @@ Anthropic config:
     "api_type": "claude"
 }
 ```
-`api_key`: Obtain your OpenAI API key from the [OpenAI website](https://platform.openai.com/account/api-keys) and your Claude API key from the [Anthropic website](https://console.anthropic.com/account/keys).
-
-`api`: The base API used to send requests. You may also specify a proxy URL like: "https://your_proxy_domain/v1". For Azure APIs, you can find relevant information on the Azure resource dashboard. The API format is usually: `https://{your_organization}.openai.azure.com/`.
-
-`api_type`: Currently supported values are "open_ai", "azure", or "claude".
-
-
 
 ### 2. Use with command lines
 #### Evaluate one sample
@@ -153,7 +158,8 @@ prompts and responses detail...
 #### Shared arguments
 `--config_file` string <span style="color:orange">Required</span> <br>A local configuration file containing API key information.
 
-`--template_path` string <span style="color:grey">Optional</span> <br> A cuatom template json file path, Please refer to the default prompt template for modification. You can define the position of instruction at the beginning or end, define the content of instruction, arrange the output of the model to be evaluated, and specify output formats. Currently, only JSON format parsing or score mode separated by spaces are supported as output formats. For example: {"A":0,"B": 0.1} or 0 0.1.
+ <span id="jump">`--template_path`</span> string <span style="color:grey">Optional</span> <br> A cuatom template json file path, Please refer to the default prompt template for modification. You can define the position of instruction at the beginning or end, define the content of instruction, arrange the output of the model to be evaluated, and specify output formats. Currently, only JSON format parsing or score mode separated by spaces are supported as output formats. For example: {"A":0,"B": 0.1} or 0 0.1.<br>
+Would use the template provided below if there is no specific one available.
 ```json
 {
     "eval_without_target_instruction": "Please solve the [Question] independently to obtain the [Correct answer], and then evaluate and comment each [Candidate answer] based on the [Correct answer]. Finally, output all [Candidate answers] scores (0-1) in a summary format of {\"number\": \"score\"}, e.g, {\"A\": \"0.2\", \"B\": \"0.8\"}",
@@ -168,7 +174,7 @@ prompts and responses detail...
 
 `--model` string <span style="color:grey">Optional</span>  Defaults to GPT-3.5-turbo or Claude-v1.3 depends on `api_type`<br> Which model to perform evaluation.
 
-`--temperature` number <span style="color:grey">Optional</span> Defaults to 1 <br>What sampling temperature to use.  Higher values like 1 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
+`--temperature` number <span style="color:grey">Optional</span> Defaults to 1 <br>What sampling temperature to use.  Higher values like 1 will make the output more random, while lower values like 0.1 will make it more focused and deterministic.
 
 `--max_new_tokens` integer <span style="color:grey">Optional</span> Defaults to 2048 <br>
 The maximum number of tokens to generate in the chat completion.
@@ -180,9 +186,9 @@ The total length of input tokens and generated tokens is limited by the model's 
 The question that predicted by LLMs, e.g., A math question would be like: "1+1=?".
 
 `--answers` array <span style="color:orange">Required</span> <br>
-LLMs outputs correspond to the question in the prompt, answers must be separated by space.
+LLMs outputs correspond to the question in the prompt, answers must be separated by space. e.g., A set of four answers would look like this: 1 0 -1 2
 
-`--target` <span style="color:grey">Optional</span> Defaults to \'\'<br> The correct answer for the question in the prompt. The prompt will be different depending on whether the target is provided, e.g., if no target is provided, the model is asked to solve the question first and then evaluate each candidate answer.
+`--target` <span style="color:grey">Optional</span> Defaults to \'\'<br> The correct answer for the question. The prompt will be different depending on whether the target is provided, e.g., if no target is provided, the model is asked to solve the question first and then evaluate each candidate answer.
 
 #### Evaluate file arguments
 
@@ -200,6 +206,6 @@ The output file can be specified as a .json, .jsonl, .csv or.xlsx extension. If 
 
 `--sample_num`: number <span style="color:grey">Optional</span> Defaults to 0<br>Sample number of prompt-answer pairs to evaluate.
 
-`--interval`: number <span style="color:grey">Optional</span> Defaults to 1 <br> Sleep interval in seconds between each request to avoid exceeding the request rate limit. A larger value like 10s is recommended for GPT-4.
+`--interval`: number <span style="color:grey">Optional</span> Defaults to 1 <br> Sleep interval in seconds between each request to avoid exceeding the request rate limit. A larger value like 10 is recommended for GPT-4.
 
 `--retry`:  <span style="color:grey">Optional</span> Defaults to True <br> Whether to retry once for all failed requests. Failed requests may be due to reasons such as exceeding API request frequency, incorrect answer format parsing, or network failure.
