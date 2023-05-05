@@ -126,9 +126,9 @@ SCORE:
 #### Evaluate one file
 ```sh
 auto-eval file --config_file CHANGE_TO_YOUR_CONFIG_PATH \
---eval_data_path   \
---output_path  \
---model gpt-3.5-turbo 
+--eval_data_path model_a_pred.json model_b_pred.json  \
+--output_path eval_result_path.xlsx \
+--model gpt-4 
 ```
 <details open> <summary>log output example:</summary>
 
@@ -160,21 +160,21 @@ prompts and responses detail...
 ### Shared arguments
 `--config_file` string ${\color{orange}\text{Required}}$ <br>A local configuration file containing API key information.
 
- <span id="jump">`--template_path`${\color{grey}\text{Optional}}$ <br> A cuatom template json file path, Please refer to the default prompt template for modification. You can define the position of instruction at the beginning or end, define the content of instruction, arrange the output of the model to be evaluated, and specify output formats. Currently, only JSON format parsing or score mode separated by spaces are supported as output formats. For example: `{"A":0,"B": 0.1}` or 0 0.1.<br>
-Would use the template provided below if there is no specific one available.
+ <span id="jump">`--template_path`${\color{grey}\text{Optional}}$ <br>
+The template file path should be in JSON format and instructs the model to evaluate and comment on each answer, as well as output summary scores in JSON format, such as `{"A": 0, "B": 0.1}`.<br>
+If no specific template is available, the default one provided below will be used.<br>
+If you want to use a custom template, make sure it has slots for "question", "answers", and "target". The first two are required, while "target" is only necessary if your evaluation data has a column named "target".
 ```json
 {
-    "eval_without_target_instruction": "Please solve the [Question] independently to obtain the [Correct answer], and then evaluate and comment each [Candidate answer] based on the [Correct answer]. Finally, output all [Candidate answers] scores (0-1) in a summary format of {\"number\": \"score\"}, e.g, {\"A\": \"0.2\", \"B\": \"0.8\"}",
-    "eval_with_target_instruction": "Please evaluate and comment each [Candidate answer] based on the [Correct answer]. Then output all [Candidate answer] scores (0-1) in a summary format of {\"number\": \"score\"}, e.g, {\"A\": \"0.2\", \"B\": \"0.8\"}",
-    "eval_with_target_template": "[Question]: {q}\n\n[Correct answer]: {target}\n\n[Candidate answer]:\n{options}\n\n[System]:\n{instruction}",
-    "eval_without_target_template": "[Question]: {q}\n\n[Candidate answer]:\n{options}\n\n[System]:\n{instruction}" 
+    "eval_with_target_template": "[Question]: {question}\n\n[Correct answer]: {target}\n\n[Candidate answer]:\n{answers}\n\n[System]:\nPlease solve the [Question] independently to obtain the [Correct answer], and then evaluate and comment each [Candidate answer] based on the [Correct answer]. Finally, output all [Candidate answers] scores (0-1) in a summary format of {{\"number\": \"score\"}}, e.g, {{\"A\": \"0.2\", \"B\": \"0.8\"}}",
+    "eval_without_target_template": "[Question]: {question}\n\n[Candidate answer]:\n{answers}\n\n[System]:\nPlease evaluate and comment each [Candidate answer] based on the [Correct answer]. Then output all [Candidate answer] scores (0-1) in a summary format of {{\"number\": \"score\"}}, e.g, {{\"A\": \"0.2\", \"B\": \"0.8\"}}" 
 }
 ```
 
 
 `--verbose` bool ${\color{grey}\text{Optional}}$ Defaults to True <br> Whether to print every prompt and response evaluation detail.
 
-`--model` string ${\color{grey}\text{Optional}}$  Defaults to GPT-3.5-turbo or Claude-v1.3 depends on `api_type`<br> Which model to perform evaluation.
+`--model` string ${\color{grey}\text{Optional}}$  Defaults to gpt-3.5-turbo or claude-v1.3 depends on `api_type`<br> Which model to perform evaluation, The default model for evaluation is either gpt-3.5-turbo or claude-v1.3, depending on the API type. You can specify which model to use for evaluation by providing its name, such as "gpt-4", "claude-instant-v1", or "claude-v1.3".
 
 `--temperature` number ${\color{grey}\text{Optional}}$ Defaults to 1 <br>What sampling temperature to use.  Higher values like 1 will make the output more random, while lower values like 0.1 will make it more focused and deterministic.
 
@@ -195,7 +195,7 @@ LLMs outputs correspond to the question in the prompt, answers must be separated
 
 ### Evaluate file arguments
 
-`--eval_data_path`: string ${\color{orange}\text{Required}}$ <br>The file path of the input data to be evaluated.<br>
+`--eval_data_path`: string ${\color{orange}\text{Required}}$ <br>This refers to the file paths of the input data that will be evaluated. If multiple paths are provided, please ensure that they have identical column names.
 
 **Input file format:**
 The input file currently supports files with .json, .jsonl, .csv, and .xlsx extensions. The header of the file can be one of the following types: `{'instruction', 'input', ‘output’}`, `{'prompt', 'output'}`, `{'prompt', 'target'}`, `{'question', 'answer'}`, or `{'question', 'output'}`.

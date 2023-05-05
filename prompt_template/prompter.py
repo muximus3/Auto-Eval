@@ -13,57 +13,27 @@ class Prompter(abc.ABC):
     def extract_result_from_response(response):
         raise NotImplementedError
 
-class EvalPrompt(Prompter):
-    __slots__ = ("eval_with_target_instruction",
-                 "eval_without_target_instruction",
-                 "eval_with_target_template", "eval_without_target_template",
-                 "score_output_type", "response_score_position", "_verbose")
+class EvalPrompter(Prompter):
+    __slots__ = ( "eval_with_target_template", "eval_without_target_template", "_verbose")
 
     @classmethod
-    def from_config(cls,
-                    prompt_template_file: str = "",
-                    verbose: bool = False):
+    def from_config(cls, prompt_template_file: str, verbose: bool = True):
         if not os.path.exists(prompt_template_file):
             raise ValueError(f'File not exists:{prompt_template_file}')
         template_data = load_json(prompt_template_file)
         eval_with_target_template = template_data['eval_with_target_template']
-        eval_without_target_template = template_data[
-            'eval_without_target_template']
-        eval_with_target_instruction = template_data.get(
-            'eval_with_target_instruction', '')
-        eval_without_target_instruction = template_data.get(
-            'eval_without_target_instruction', '')
-        score_output_type = template_data.get('score_output_type', 'json')
-        response_score_position = template_data.get('response_score_position',
-                                                    'tail')
-
-        instruction_header = template_data.get('header', '')
+        eval_without_target_template = template_data[ 'eval_without_target_template']
         if verbose:
             print(f'Using prompt template:\n {json.dumps(template_data, sort_keys=True, indent=2)}')
-        return cls(eval_with_target_template, eval_without_target_template,
-                   eval_with_target_instruction,
-                   eval_without_target_instruction, score_output_type,
-                   response_score_position, instruction_header, verbose)
+        return cls(eval_with_target_template, eval_without_target_template, verbose)
 
     def __init__(self,
                  eval_with_target_template: str,
                  eval_without_target_template: str,
-                 eval_with_target_instruction: str,
-                 eval_without_target_instruction: str,
-                 score_output_type: str,
-                 response_score_position: str,
-                 instruction_header: str,
-                 verbose: bool = False) -> None:
+                 verbose: bool = True) -> None:
         self._verbose = verbose
         self.eval_with_target_template = eval_with_target_template
         self.eval_without_target_template = eval_without_target_template
-        self.eval_with_target_instruction = eval_with_target_instruction
-        self.eval_without_target_instruction = eval_without_target_instruction
-        self.score_output_type = score_output_type
-        self.response_score_position = response_score_position
-        if instruction_header and eval_with_target_instruction and eval_without_target_instruction:
-            self.eval_with_target_instruction = f'{instruction_header} {eval_with_target_instruction}'
-            self.eval_without_target_instruction = f'{instruction_header} {eval_without_target_instruction}'
 
     def generate_prompt(self, question: str, target: str,
                         candidate_answers: List[str]) -> str:
@@ -72,28 +42,15 @@ class EvalPrompt(Prompter):
         """
         candidate_answer_numbers = generate_letters(len(candidate_answers))
         format_option_data = '\n'.join([
-            f'{candidate_answer_numbers[i]}. {candidate_answers[i]}'
+            f'**{candidate_answer_numbers[i]}**. {candidate_answers[i]}'
             for i in range(len(candidate_answers))
         ])
         if target:
-            if self.eval_with_target_instruction:
-                eval_prompt = self.eval_with_target_template.format(
-                    q=question,
-                    target=target,
-                    options=format_option_data,
-                    instruction=self.eval_with_target_instruction)
-            else:
-                eval_prompt = self.eval_with_target_template.format(
-                    q=question, target=target, options=format_option_data)
+            eval_prompt = self.eval_with_target_template.format(
+                question=question, target=target, answers=format_option_data)
         else:
-            if self.eval_without_target_instruction:
-                eval_prompt = self.eval_without_target_template.format(
-                    q=question,
-                    options=format_option_data,
-                    instruction=self.eval_without_target_instruction)
-            else:
-                eval_prompt = self.eval_without_target_template.format(
-                    q=question, options=format_option_data)
+            eval_prompt = self.eval_without_target_template.format(
+                question=question, answers=format_option_data)
         if self._verbose:
             print(
                 f"\n{'-'*20} prompt detail 🚀  {'-'*20}\n\n{eval_prompt}\n\n{'-'*20} prompt end {'-'*20}"
@@ -108,10 +65,6 @@ class EvalPrompt(Prompter):
             print(
                 f"{'-'*20} response detail ⭐️ {'-'*20}\n\n{response}\n\n{'-'*20} response end {'-'*20}\n"
             )
-        if self.score_output_type == 'json':
-            result_json = extract_last_json(response.strip())
-            scores = list(map(lambda x: float(x), result_json.values()))
-        elif self.score_output_type == 'list':
-            score_positon = 0 if self.response_score_position == 'head' else -1
-            scores = extract_numbers(response.split('\n')[score_positon])
+        result_json = extract_last_json(response.strip())
+        scores = list(map(lambda x: float(x), result_json.values()))
         return scores

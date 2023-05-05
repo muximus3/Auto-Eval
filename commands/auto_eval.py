@@ -3,7 +3,8 @@ import sys
 import argparse
 from oneapi import OneAPITool
 sys.path.append(os.path.normpath(f"{os.path.dirname(os.path.abspath(__file__))}/.."))
-from eval import eval_one_file, eval_one, EvalConfig 
+from eval import eval_one_group, eval_one_qa, eval_groups, EvalConfig
+from utils.data_utils import df_reader
 import prompt_template
     
 def add_shared_arguments(parser):
@@ -29,7 +30,7 @@ def main():
     # auto-eval file
     file_parser = subparsers.add_parser("file", help="auto-eval file [<args>]")
     add_shared_arguments(file_parser)
-    file_parser.add_argument("-edp", "--eval_data_path", type=str, help="", required=True)
+    file_parser.add_argument("-edp", "--eval_data_path", nargs="+", help="one or more eval data path", required=True)
     file_parser.add_argument("-op", "--output_path", type=str, default="", help="", required=False)
     file_parser.add_argument("-ec", "--eval_categories", default=None, nargs="+", help="only evaluate chosen categories", required=False)
     file_parser.add_argument("-sn", "--sample_num", type=int, default=0, help="", required=False)
@@ -41,11 +42,11 @@ def main():
         template_path =  os.path.join(os.path.dirname(prompt_template.__file__), 'eval_prompt_template.json')
     else:
         template_path = args.template_path
-    eval_prompter = prompt_template.EvalPrompt.from_config(template_path, verbose=args.verbose)
+    eval_prompter = prompt_template.EvalPrompter.from_config(template_path, verbose=args.verbose)
 
     if args.command == "line":
         tool = OneAPITool.from_config_file(args.config_file)
-        score, raw_response = eval_one(
+        score, raw_response = eval_one_qa(
             eval_prompter=eval_prompter,
             question=args.prompt, 
             candidate_answers=args.answers, 
@@ -58,7 +59,7 @@ def main():
         print(f'\nSCORE:\n{score}')
 
     elif args.command == "file":
-        eval_one_file(
+        eval_groups(
             EvalConfig(
             eval_prompter=eval_prompter,
             api_config_file=args.config_file, 

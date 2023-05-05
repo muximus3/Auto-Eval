@@ -11,16 +11,17 @@ import sys
 from dataclasses import dataclass
 from oneapi import OneAPITool
 sys.path.append(os.path.normpath(f'{os.path.dirname(os.path.abspath(__file__))}/..'))
-from utils import df_reader, df_saver
+from utils import df_saver, df_reader
 from prompt_template import Prompter
 
 
-def eval_one(eval_prompter: Prompter,
+def eval_one_qa(
+             api_tool: OneAPITool,
+             eval_prompter: Prompter,
              question: str,
              candidate_answers: List[str],
-             target: Union[str, None],
-             api_tool: OneAPITool,
-             model: str,
+             target: Union[str, None]=None,
+             model: str='',
              temperature=0.1,
              max_new_tokens=2048) -> Tuple[Union[List[float], None], str]:
     raw_response = ''
@@ -43,7 +44,7 @@ def eval_one_group(
     api_tool: OneAPITool,
     eval_prompter: Prompter,
     data_group: pd.DataFrame,
-    model: str,
+    model: str='',
     temperature=0.1,
     max_new_tokens=2048,
 ) -> Union[pd.DataFrame, None]:
@@ -54,11 +55,11 @@ def eval_one_group(
         target = group['target'].unique()[0]
     else:
         target = ''
-    scores, raw_response = eval_one(eval_prompter=eval_prompter,
+    scores, raw_response = eval_one_qa(api_tool=api_tool,
+                      eval_prompter=eval_prompter,
                       question=question,
                       candidate_answers=candidate_answers,
                       target=target,
-                      api_tool=api_tool,
                       model=model,
                       temperature=temperature,
                       max_new_tokens=max_new_tokens)
@@ -72,7 +73,8 @@ def eval_one_group(
 
 
 
-def prepare_eval_data(eval_data: pd.DataFrame, eval_categories: Optional[List[str]] = None, sample_num: int=0) -> List[pd.DataFrame]:
+def prepare_eval_data(eval_data_path: List[str], eval_categories: Optional[List[str]] = None, sample_num: int=0) -> List[pd.DataFrame]:
+    eval_data = df_reader(eval_data_path[0]) if len(eval_data_path) == 1 else pd.concat([df_reader(file_path) for file_path in eval_data_path])
     if 'score' in eval_data.keys():
         eval_data['score'] = 0.
     eval_data = eval_data.fillna('')
@@ -110,7 +112,7 @@ def log_score_results(eval_results_df: pd.DataFrame):
         if 'category' in eval_results_df.keys():
             score_category = eval_results_df.groupby([
                 'model', 'category'
-            ])['score'].apply(lambda x: f'{x.sum():.1f}/{len(x)}').reset_index().sort_values(by='model')
+            ])['score'].apply(lambda x: f'{x.sum():.1f}/{len(x)}').reset_index().sort_values(by='category')
             print(
                 f'\n{"-"*20} Scores by Model and Task Category {"-"*20}\n{score_category.to_markdown(index=False)}'
             )
@@ -135,12 +137,11 @@ class EvalConfig:
     temperature: float = 0.1
     max_new_tokens: int = 2048
 
-def eval_one_file(
+def eval_groups(
     eval_config: EvalConfig
 ):
     # Preparing data
-    eval_data = df_reader(eval_config.eval_data_path)
-    eval_groups = prepare_eval_data(eval_data, eval_config.eval_categories, eval_config.sample_num)
+    eval_groups = prepare_eval_data(eval_config.eval_data_path, eval_config.eval_categories, eval_config.sample_num)
 
     # Init api tool and prompter
     tool = OneAPITool.from_config_file(config_file=eval_config.api_config_file)
@@ -169,6 +170,7 @@ def eval_one_file(
     log_score_results(eval_results_df=eval_results_df)
     # Log score results
     print(f'Eval model: {eval_config.model}')
+    print(f'Eval files: {eval_config.eval_data_path}')
     print(f'Failed requests: {len(failed_results)}/{len(eval_groups)}')
     # Save results
     if eval_config.output_path:

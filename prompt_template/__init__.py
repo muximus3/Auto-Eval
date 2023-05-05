@@ -1,1 +1,1 @@
-from .prompter import EvalPrompt, Prompter
+from .prompter import EvalPrompter, Prompter
