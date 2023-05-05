@@ -83,8 +83,6 @@ def prepare_eval_data(eval_data_path: List[str], eval_categories: Optional[List[
             eval_data['input'], sep=' ')
     elif len({'prompt', 'output'} - set(eval_data.keys())) == 0:
         eval_data['quesion'] = eval_data['prompt'].copy()
-    elif len({'prompt', 'target'} - set(eval_data.keys())) == 0:
-        eval_data['output'] = eval_data['target'].copy()
     elif len({'question', 'answer'} - set(eval_data.keys())) == 0:
         eval_data['output'] = eval_data['answer'].copy()
     elif len({'question', 'output'} - set(eval_data.keys())) == 0:

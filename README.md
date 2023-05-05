@@ -2,14 +2,9 @@
 
 **Auto-Eval** utilizes ChatGPT (GPT-3.5-turbo), GPT-4, and Claude's API to evaluate language models with a single command. 
 
-By default, it assesses the accuracy of language models in various areas such as mathematical calculations, question answering, translation, classification and more. 
-
 The evaluation prompt has been extensively tested to ensure maximum accuracy even when using GPT-3.5 while minimizing word usage to save token budget since GPT-4 can be quite expensive 💰.
 
 To further personalize the prompt, you can modify it using the default templates as a basis. For additional information, please refer to the documentation provided below ([click here](#jump)).
-
-Our unified interface integrates multiple GPT APIs using the [One-API-Tool](https://github.com/muximus3/OneAPI) library, allowing for maximum customization and future development.
-
 
 ## Installation
 ```sh
@@ -198,7 +193,7 @@ LLMs outputs correspond to the question in the prompt, answers must be separated
 `--eval_data_path`: string ${\color{orange}\text{Required}}$ <br>This refers to the file paths of the input data that will be evaluated. If multiple paths are provided, please ensure that they have identical column names.
 
 **Input file format:**
-The input file currently supports files with .json, .jsonl, .csv, and .xlsx extensions. The header of the file can be one of the following types: `{'instruction', 'input', ‘output’}`, `{'prompt', 'output'}`, `{'prompt', 'target'}`, `{'question', 'answer'}`, or `{'question', 'output'}`.
+The input file currently supports files with .json, .jsonl, .csv, and .xlsx extensions. The header of the file can be one of the following types: `{'instruction', 'input', ‘output’}`, `{'prompt', 'output'}`, `{'question', 'answer'}`, or `{'question', 'output'}`.
 
 `--output_path`: string ${\color{orange}\text{Required}}$ <br>The output file path for evaluation results.
 
