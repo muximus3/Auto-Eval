@@ -20,7 +20,7 @@ def eval_one_qa(
              eval_prompter: Prompter,
              question: str,
              candidate_answers: List[str],
-             target: Union[str, None]=None,
+             target: Union[str, None]='',
              model: str='',
              temperature=0.1,
              max_new_tokens=2048) -> Tuple[Union[List[float], None], str]:
@@ -75,8 +75,6 @@ def eval_one_group(
 
 def prepare_eval_data(eval_data_path: List[str], eval_categories: Optional[List[str]] = None, sample_num: int=0) -> List[pd.DataFrame]:
     eval_data = df_reader(eval_data_path[0]) if len(eval_data_path) == 1 else pd.concat([df_reader(file_path) for file_path in eval_data_path])
-    if 'score' in eval_data.keys():
-        eval_data['score'] = 0.
     eval_data = eval_data.fillna('')
     if len({'instruction', 'input', 'output'} - set(eval_data.keys())) == 0:
         eval_data['question'] = eval_data['instruction'].str.cat(

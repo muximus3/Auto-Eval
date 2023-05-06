@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="auto-eval",
-    version="0.1.4",
+    version="0.1.6",
     packages=find_packages(),
     package_data={
       "prompt_template":["eval_prompt_template.json"]  

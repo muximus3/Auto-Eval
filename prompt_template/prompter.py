@@ -45,6 +45,7 @@ class EvalPrompter(Prompter):
             f'**{candidate_answer_numbers[i]}**. {candidate_answers[i]}'
             for i in range(len(candidate_answers))
         ])
+
         if target:
             eval_prompt = self.eval_with_target_template.format(
                 question=question, target=target, answers=format_option_data)

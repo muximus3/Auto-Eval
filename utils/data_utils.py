@@ -6,8 +6,10 @@ import pandas as pd
 
 
 def df_reader(data_path) -> pd.DataFrame:
-    if data_path.endswith(('json', 'jsonl')):
+    if data_path.endswith('json'):
         df_data = pd.read_json(data_path)
+    if data_path.endswith('jsonl'):
+        df_data = pd.read_json(data_path, lines=True)
     elif data_path.endswith('xlsx'):
         df_data = pd.read_excel(data_path)
     elif data_path.endswith('csv'):

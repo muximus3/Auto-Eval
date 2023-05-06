@@ -45,7 +45,7 @@ Anthropic config:
 }
 ```
 
-### 2. Use with command lines
+### 2. Usage with command lines
 #### Evaluate one sample
 ```sh
 auto-eval line --config_file CHANGE_TO_YOUR_CONFIG_PATH \
@@ -118,7 +118,7 @@ SCORE:
 </details>
 
 
-#### Evaluate one file
+#### Evaluate files
 ```sh
 auto-eval file --config_file CHANGE_TO_YOUR_CONFIG_PATH \
 --eval_data_path model_a_pred.json model_b_pred.json  \
