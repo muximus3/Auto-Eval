@@ -2,10 +2,10 @@ from setuptools import setup, find_packages
 
 setup(
     name="auto-eval",
-    version="0.1.6",
+    version="0.1.7",
     packages=find_packages(),
     package_data={
-      "prompt_template":["eval_prompt_template.json"]  
+      "eval/prompt_template":["eval_prompt_template.json"]  
     },
     install_requires=[
         # Add your library's dependencies here
@@ -17,7 +17,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "auto-eval=commands.auto_eval:main",
+            "auto-eval=eval.commands.auto_eval:main",
         ]
     },
     description="Using only one line of commmands to evaluate multiple models",

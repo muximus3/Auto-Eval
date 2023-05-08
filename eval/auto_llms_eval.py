@@ -11,8 +11,8 @@ import sys
 from dataclasses import dataclass
 from oneapi import OneAPITool
 sys.path.append(os.path.normpath(f'{os.path.dirname(os.path.abspath(__file__))}/..'))
-from utils import df_saver, df_reader
-from prompt_template import Prompter
+from eval.utils import df_saver, df_reader
+from eval.prompt_template import Prompter
 
 
 def eval_one_qa(
