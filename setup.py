@@ -2,10 +2,10 @@ from setuptools import setup, find_packages
 
 setup(
     name="auto-eval",
-    version="0.1.7",
+    version="0.1.8",
     packages=find_packages(),
     package_data={
-      "eval/prompt_template":["eval_prompt_template.json"]  
+      "eval":["prompt_template/eval_prompt_template.json"]  
     },
     install_requires=[
         # Add your library's dependencies here

@@ -127,9 +127,26 @@ auto-eval file --config_file CHANGE_TO_YOUR_CONFIG_PATH \
 ```
 
 **Input file format:**<br>
-The input file currently supports files with .json, .jsonl, .csv, and .xlsx extensions. The headers(column names) of the file can be one of the following types: `{'instruction', 'input', ‘output’}`, `{'prompt', 'output'}`, `{'question', 'answer'}`, or `{'question', 'output'}`.
+
+The input file currently supports files with .json, .jsonl, .csv, and .xlsx extensions. The headers(column names) of the file can be one of the following types: 
+- `{"instruction", "input", "output"}`,
+-  `{"prompt", "output"}`
+-  `{"question", "answer"}`
+-  `{"question", "output"}` <br>
+
+The "question," "prompt," and "instruction" + "input" refer to the original inquiry, such as "Please calculate carefully: 1+1=?" or "Explain landing on the moon like I am five." The  "answer" and "output" represent the predicted answer of the model for a given question. If the format is in an {"instruction", "input"} form, we will concatenate both elements to create a complete question. <br>
+To get an idea of what eval input file looks like.
+here is an example of test data in JSON format with model's pseudo prediction.<br>
+```json
+    {"type":"Mathematics","instruction":"'I want to repair a fence for my garden. Help me estimate how much fence length I need to prepare. My garden is 10 meters wide, 5 meters long, and one side is against a wall.'", "input":"","output":"The answer is 15 meters"},
+    {"type":"Mathematics","instruction":"Sort this list of numbers in ascending order", "input": "[230, 1, 4, 7000, 20, 300]","output":"[1, 4, 230, 7000, 20, 300]"},
+    {"type":"Mathematics","instruction":"Sort this list of numbers in descending order", "input":"[230，1，4，7000，20 ，300]","output":"[7000, 300, 230, 20, 4, 1]"}
+]
+```
+
 
 **Output File format:**<br>
+
 The output file can be specified as a .json, .jsonl, .csv or.xlsx extension. If it contains a field called "model", scores and statistics will be grouped based on this field. If it also contains fields called "model" and "category", scores and statistics will be grouped based on both fields. Any other fields will not be processed; the output will include all columns from the original input along with evaluation scores and explanations.
 
 <details open> <summary>log output example:</summary>
