@@ -240,3 +240,8 @@ LLMs outputs correspond to the question in the prompt, answers must be separated
 `--interval`: number ${\color{grey}\text{Optional}}$ Defaults to 1 <br> Sleep interval in seconds between each request to avoid exceeding the request rate limit. A larger value like 10 is recommended for GPT-4.
 
 `--retry`:  ${\color{grey}\text{Optional}}$ Defaults to True <br> Whether to retry once for all failed requests. Failed requests may be due to reasons such as exceeding API request frequency, incorrect answer format parsing, or network failure.
+
+
+## ToDo
+- [ ] Supporting prompts evaluation by output the accuracy of different prompts. 
+- [ ] Configuring a default test set for prompt evaluation.
