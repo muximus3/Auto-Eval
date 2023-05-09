@@ -138,6 +138,7 @@ The "question," "prompt," and "instruction" + "input" refer to the original inqu
 To get an idea of what eval input file looks like.
 here is an example of test data in JSON format with model's pseudo prediction.<br>
 ```json
+[
     {"type":"Mathematics","instruction":"'I want to repair a fence for my garden. Help me estimate how much fence length I need to prepare. My garden is 10 meters wide, 5 meters long, and one side is against a wall.'", "input":"","output":"The answer is 15 meters"},
     {"type":"Mathematics","instruction":"Sort this list of numbers in ascending order", "input": "[230, 1, 4, 7000, 20, 300]","output":"[1, 4, 230, 7000, 20, 300]"},
     {"type":"Mathematics","instruction":"Sort this list of numbers in descending order", "input":"[230，1，4，7000，20 ，300]","output":"[7000, 300, 230, 20, 4, 1]"}
