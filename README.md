@@ -129,7 +129,7 @@ auto-eval file --config_file CHANGE_TO_YOUR_CONFIG_PATH \
 **Input file format:**<br>
 
 The input file currently supports files with .json, .jsonl, .csv, and .xlsx extensions. The headers(column names) of the file can be one of the following types: 
-- `{"instruction", "input", "output"}`,
+- `{"instruction", "input", "output"}`
 -  `{"prompt", "output"}`
 -  `{"question", "answer"}`
 -  `{"question", "output"}` <br>
