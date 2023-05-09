@@ -46,7 +46,7 @@ Anthropic config:
 ```
 
 ### 2. Usage with command lines
-#### Evaluate one sample
+#### Evaluate single sample
 ```sh
 auto-eval line --config_file CHANGE_TO_YOUR_CONFIG_PATH \
 --model gpt-3.5-turbo \
@@ -128,25 +128,28 @@ auto-eval file --config_file CHANGE_TO_YOUR_CONFIG_PATH \
 
 **Input file format:**<br>
 
-The input file currently supports files with .json, .jsonl, .csv, and .xlsx extensions.<br>
+- The input file currently supports files with .json, .jsonl, .csv, and .xlsx extensions.<br>
 
-To score multiple files for comparison, use the argument `-eval_data_path` followed by the file names separated by spaces. For example: `-eval_data_path file1.json file2.json ... fileN.json`. To view more detailed arguments, please use the command `auto-eval file -h` after installing this repository or refer to the full documentation below.<br>
+- To score multiple files for comparison, use the argument `-eval_data_path` followed by the file names separated by spaces. For example: `-eval_data_path file1.json file2.json ... fileN.json`. Files can have different formats as long as they adhere to one of the mentioned formats below.<br>To simplify comparison of scores across various models, it is recommended to add a "model" column that distinguishes between the names of different models and enables easy outputting of statistics on scores from multiple models.
 
-The headers(column names) of the file can be one of the following types: 
-- `{"instruction", "input", "output"}`
--  `{"prompt", "output"}`
--  `{"question", "answer"}`
--  `{"question", "output"}` <br>
+- To view more detailed arguments, Please use the command `auto-eval file -h` after installing this repository or refer to the full documentation below.<br>
 
-The "question," "prompt," and "instruction" + "input" refer to the original inquiry, such as "Please calculate carefully: 1+1=?" or "Explain landing on the moon like I am five." The  "answer" and "output" represent the predicted answer of the model for a given question. If the format is in an {"instruction", "input"} form, we will concatenate both elements to create a complete question. <br>
+- The headers(column names) of the file can be one of the following types: 
+    - `{"instruction", "input", "output"}`
+    -  `{"prompt", "output"}`
+    -  `{"question", "answer"}`
+    -  `{"question", "output"}` <br>
+
+    The "question," "prompt," and "instruction" + "input" refer to the original inquiry, such as "Please calculate carefully: 1+1=?" or "Explain landing on the moon like I am five." The  "answer" and "output" represent the predicted answer of the model for a given question. If the format is in an {"instruction", "input"} form, we will concatenate both elements to create a complete question. <br>
+
 
 To get an idea of what eval input file looks like.
 here is an example of test data in JSON format with model's pseudo prediction.<br>
 ```json
 [
-    {"type":"Mathematics","instruction":"'I want to repair a fence for my garden. Help me estimate how much fence length I need to prepare. My garden is 10 meters wide, 5 meters long, and one side is against a wall.'", "input":"","output":"The answer is 15 meters"},
-    {"type":"Mathematics","instruction":"Sort this list of numbers in ascending order", "input": "[230, 1, 4, 7000, 20, 300]","output":"[1, 4, 230, 7000, 20, 300]"},
-    {"type":"Mathematics","instruction":"Sort this list of numbers in descending order", "input":"[230，1，4，7000，20 ，300]","output":"[7000, 300, 230, 20, 4, 1]"}
+    {"category":"Mathematics","instruction":"'I want to repair a fence for my garden. Help me estimate how much fence length I need to prepare. My garden is 10 meters wide, 5 meters long, and one side is against a wall.'", "input":"","output":"The answer is 15 meters", "model": "model_a"},
+    {"category":"Mathematics","instruction":"Sort this list of numbers in ascending order", "input": "[230, 1, 4, 7000, 20, 300]","output":"[1, 4, 230, 7000, 20, 300]", "model": "model_a"},
+    {"category":"Mathematics","instruction":"Sort this list of numbers in descending order", "input":"[230，1，4，7000，20 ，300]","output":"[7000, 300, 230, 20, 4, 1]", "model": "model_a"}
 ]
 ```
 
@@ -154,8 +157,8 @@ here is an example of test data in JSON format with model's pseudo prediction.<b
 **Output File format:**<br>
 
 - The output file can be specified as a .json, .jsonl, .csv or.xlsx extension.<br> 
-- If it contains a field called "model", scores and statistics will be grouped based on this field. 
-- If it also contains fields called "model" and "category", scores and statistics will be grouped based on both fields. 
+- If the input file contains a field called "model", scores and statistics will be grouped based on this field. 
+- If the input file also contains fields called "model" and "category", scores and statistics will be grouped based on both fields. 
 - Any other fields will not be processed; the output will include all columns from the original input along with evaluation scores and explanations.
 
 <details open> <summary>log output example:</summary>
