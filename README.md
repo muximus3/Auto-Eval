@@ -243,5 +243,6 @@ LLMs outputs correspond to the question in the prompt, answers must be separated
 
 
 ## ToDo
+- [ ] Conbining multiple GPT-like models for prediction: routing or simply averaging.
 - [ ] Supporting prompts evaluation by output the accuracy of different prompts. 
 - [ ] Configuring a default test set for prompt evaluation.

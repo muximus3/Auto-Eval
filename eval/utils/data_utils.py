@@ -3,17 +3,20 @@ import re
 import os
 import json
 import pandas as pd
+from typing import Union, List
 
 
-def df_reader(data_path) -> pd.DataFrame:
+def df_reader(data_path, header: Union[int, None] = 0, usecols: Union[List[Union[str, int]], None] = None ,sep='\t', sheet_name=0) -> pd.DataFrame:
     if data_path.endswith('json'):
         df_data = pd.read_json(data_path)
     if data_path.endswith('jsonl'):
         df_data = pd.read_json(data_path, lines=True)
     elif data_path.endswith('xlsx'):
-        df_data = pd.read_excel(data_path)
+        df_data = pd.read_excel(data_path, header=header, usecols=usecols, sheet_name=sheet_name)
+    elif data_path.endswith('.pkl'):
+        df_data = pd.read_pickle(data_path)
     elif data_path.endswith('csv'):
-        df_data = pd.read_csv(data_path)
+        df_data = pd.read_csv(data_path, header=header, usecols=usecols, sep=sep)
     else:
         raise AssertionError(f'not supported file type:{data_path}, suport types: json, jsonl, xlsx, csv')
     return df_data
