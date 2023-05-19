@@ -49,8 +49,7 @@ def eval_one_group(
     max_new_tokens=2048,
 ) -> Union[pd.DataFrame, None]:
     group = data_group.reset_index()
-    valid_score_count = group['score'].map(lambda x: x if x != '' and x == x else None).count()
-    if 'score' in group.keys() and valid_score_count == len(group):
+    if 'score' in group.keys() and group['score'].map(lambda x: x if x != '' and x == x else None).count() == len(group):
         group['score'] = group['score'].map(float)
         return group
     question = group['question'].unique()[0]
