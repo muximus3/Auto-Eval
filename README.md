@@ -201,7 +201,7 @@ If you want to use a custom template, make sure it has slots for "question", "an
     "eval_without_target_template": "[Question]: {question}\n\n[Candidate answer]:\n{answers}\n\n[System]:\nPlease evaluate and comment each [Candidate answer] based on the [Correct answer]. Then output all [Candidate answer] scores (0-1) in a summary format of {{\"number\": \"score\"}}, e.g, {{\"A\": \"0.2\", \"B\": \"0.8\"}}" 
 }
 ```
-
+`--template_type` string ${\color{grey}\text{Optional}}$  Defaults to null <br> Which template should be used for evaluation. The default template is shown above. Another optional template is specific to the e-commerce domain. To use it, pass `--template_type e_commerce`.
 
 `--verbose` bool ${\color{grey}\text{Optional}}$ Defaults to True <br> Whether to print every prompt and response evaluation detail.
 
@@ -227,11 +227,7 @@ LLMs outputs correspond to the question in the prompt, answers must be separated
 
 `--eval_data_path`: string ${\color{orange}\text{Required}}$ <br>This refers to the file paths of the input data that will be evaluated. If multiple paths are provided, please ensure that they have identical column names.
 
-
-
 `--output_path`: string ${\color{orange}\text{Required}}$ <br>The output file path for evaluation results.
-
-
 
 `--eval_categories`: array ${\color{grey}\text{Optional}}$ Defaults to null <br> Choose specific types of question categories to evaluate. This only works when the input file contains a "category" column corresponding to each question.
 
@@ -240,6 +236,8 @@ LLMs outputs correspond to the question in the prompt, answers must be separated
 `--interval`: number ${\color{grey}\text{Optional}}$ Defaults to 1 <br> Sleep interval in seconds between each request to avoid exceeding the request rate limit. A larger value like 10 is recommended for GPT-4.
 
 `--retry`:  ${\color{grey}\text{Optional}}$ Defaults to True <br> Whether to retry once for all failed requests. Failed requests may be due to reasons such as exceeding API request frequency, incorrect answer format parsing, or network failure.
+
+`score_by`: array ${\color{grey}\text{Optional}}$ Defaults to null <br> Used to determine the groups for the groupby `pandas.groupby(by=args.score_by)` to get the summary scores of certain groups.
 
 
 ## ToDo

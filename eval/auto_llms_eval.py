@@ -48,10 +48,7 @@ def eval_one_group(
     temperature=0.1,
     max_new_tokens=2048,
 ) -> Union[pd.DataFrame, None]:
-    group = data_group.reset_index()
-    if 'score' in group.keys() and group['score'].map(lambda x: x if x != '' and x == x else None).count() == len(group):
-        group['score'] = group['score'].map(float)
-        return group
+    group = data_group.reset_index(drop=True)
     question = group['question'].unique()[0]
     candidate_answers = group['output']
     if 'target' in data_group.keys():
@@ -76,7 +73,7 @@ def eval_one_group(
 
 
 
-def prepare_eval_data(eval_data_path: List[str], eval_categories: Optional[List[str]] = None, sample_num: int=0, eval_models: Optional[List[str]] = None) -> List[pd.DataFrame]:
+def prepare_eval_data(eval_data_path: List[str], eval_categories: Optional[List[str]] = None, sample_num: int=0, eval_models: Optional[List[str]] = None) -> Tuple[List[pd.DataFrame],List[pd.DataFrame] ]:
     eval_data = df_reader(eval_data_path[0]) if len(eval_data_path) == 1 else pd.concat([df_reader(file_path) for file_path in eval_data_path])
     eval_data = eval_data.fillna('')
     if len({'instruction', 'input', 'output'} - set(eval_data.keys())) == 0:
@@ -104,7 +101,17 @@ def prepare_eval_data(eval_data_path: List[str], eval_categories: Optional[List[
         sample_keys = random.sample(grouped.groups.keys(), sample_num)
     else:
         sample_keys = grouped.groups.keys()
-    return [grouped.get_group(key) for key in sample_keys]
+    total_groups =  [grouped.get_group(key) for key in sample_keys]
+    scored_groups = []
+    unscored_groups = []
+    for group in total_groups:
+        if 'score' in group.keys() and group['score'].map(lambda x: x if x != '' and x == x else None).count() == len(group):
+            group['score'] = group['score'].map(float)
+            scored_groups.append(group)
+        else:
+            unscored_groups.append(group)
+    return scored_groups, unscored_groups
+     
 
 def log_score_results(eval_results_df: pd.DataFrame, score_by: List[str]):
     if 'model' in eval_results_df.keys():
@@ -127,9 +134,9 @@ def evaluation_prompt_acc(eval_result_df: pd.DataFrame):
     if 'targe_score' in eval_result_df.keys():
         pass
 
-def save_results(eval_results_df: pd.DataFrame, output_path: str):
+def save_results(results_df: pd.DataFrame, output_path: str):
     print(f'Saving evaluation results: {output_path}')
-    df_saver(eval_results_df, output_path)
+    df_saver(results_df, output_path)
     print(f'Saved successfully.')
 
 @dataclass
@@ -152,37 +159,36 @@ def eval_groups(
     eval_config: EvalConfig
 ):
     # Preparing data
-    eval_groups = prepare_eval_data(eval_config.eval_data_path, eval_config.eval_categories, eval_config.sample_num, eval_config.eval_models)
+    scored_groups, unscored_groups = prepare_eval_data(eval_config.eval_data_path, eval_config.eval_categories, eval_config.sample_num, eval_config.eval_models)
 
     # Init api tool and prompter
     tool = OneAPITool.from_config_file(config_file=eval_config.api_config_file)
 
-    eval_results = []
-    failed_results = []
-    for group in tqdm(eval_groups):
+    failed_groups = []
+    for group in tqdm(unscored_groups):
         result = eval_one_group(tool, eval_config.eval_prompter,  group,  eval_config.engine, eval_config.temperature, eval_config.max_new_tokens)
         if result is not None:
-            eval_results.append(result)
+            scored_groups.append(result)
         else:
-            failed_results.append(group)
+            failed_groups.append(group)
         time.sleep(eval_config.request_interval)
 
     # Retry failed requests
-    if len(failed_results) > 0 and eval_config.retry:
-        for group in tqdm(failed_results.copy(), desc='RETRY'):
+    if len(failed_groups) > 0 and eval_config.retry:
+        for group in tqdm(failed_groups.copy(), desc='RETRY'):
             result = eval_one_group(tool, eval_config.eval_prompter,  group,  eval_config.engine, eval_config.temperature, eval_config.max_new_tokens)
             if result is not None:
-                eval_results.append(result)
-                failed_results = [df for df in failed_results if not df.equals(group)]
+                scored_groups.append(result)
+                failed_groups = [df for df in failed_groups if not df.equals(group)]
             time.sleep(eval_config.request_interval)
 
-    eval_results.extend(failed_results)
-    eval_results_df = pd.concat(eval_results)
-    log_score_results(eval_results_df=eval_results_df, score_by=eval_config.score_by)
+    scored_results_df = pd.concat(scored_groups)
+    log_score_results(eval_results_df=scored_results_df, score_by=eval_config.score_by)
     # Log score results
     print(f'Eval engine: {eval_config.engine}')
     print(f'Eval files: {eval_config.eval_data_path}')
-    print(f'Failed requests: {len(failed_results)}/{len(eval_groups)}')
+    print(f'Failed requests: {len(failed_groups)}/{len(scored_groups) + len(failed_groups)}')
+    results_df = pd.concat([scored_results_df, pd.concat(failed_groups)]) if len(failed_groups) > 0 else scored_results_df
     # Save results
     if eval_config.output_path:
-        save_results(eval_results_df=eval_results_df, output_path=eval_config.output_path)
+        save_results(results_df=results_df, output_path=eval_config.output_path)
