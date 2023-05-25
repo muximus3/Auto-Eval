@@ -17,15 +17,17 @@ def df_reader(data_path, header: Union[int, None] = 0, usecols: Union[List[Union
         df_data = pd.read_pickle(data_path)
     elif data_path.endswith('csv'):
         df_data = pd.read_csv(data_path, header=header, usecols=usecols, sep=sep)
+    elif data_path.endswith('.parquet'):
+        df_data = pd.read_parquet(data_path)
     else:
         raise AssertionError(f'not supported file type:{data_path}, suport types: json, jsonl, xlsx, csv')
     return df_data
 
 def df_saver(df: pd.DataFrame, data_path):
     if data_path.endswith('json'):
-        df.to_json(df, orient='records', force_ascii=False)
+        df.to_json(data_path, orient='records', force_ascii=False)
     if data_path.endswith('jsonl'):
-        df.to_json(df, orient='records', force_ascii=False, lines=True)
+        df.to_json(data_path, orient='records', force_ascii=False, lines=True)
     elif data_path.endswith('xlsx'):
         df2xlsx(df, data_path, index=False)
     elif data_path.endswith('csv'):
