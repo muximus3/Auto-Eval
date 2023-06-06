@@ -8,7 +8,7 @@ To further personalize the prompt, you can modify it using the default templates
 
 ## How does it work?
 
-Assuming we have a test set, we can predict it with any model and output them to a file in JSON, CSV, or other format. The format of the file is as follows:
+Assuming we have a test set, we can use any model to make predictions and save them in a file format such as JSON, CSV, or other formats. The structure of the output file is as follows:
 
 | prompt | output | model | category |
 | --- | --- | --- | --- |
