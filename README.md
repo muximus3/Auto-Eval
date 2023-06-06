@@ -6,19 +6,55 @@ The evaluation prompt has been extensively tested to ensure maximum accuracy eve
 
 To further personalize the prompt, you can modify it using the default templates as a basis. For additional information, please refer to the documentation provided below ([click here](#jump)).
 
+## How does it work?
+
+Assuming we have a test set, we can predict it with any model and output them to a file in JSON, CSV, or other format. The format of the file is as follows:
+
+| prompt | output | model | category |
+| --- | --- | --- | --- |
+| What is 1+1? | 3 | model_a | Arithmetic |
+| What is the capital of France? | Paris | model_a | General Knowledge |
+| What is 1+1? | 2 | model_b | Arithmetic |
+| What is the capital of France? | Paris | model_b | General Knowledge |
+
+ The "prompt" column represents the input question, while the "output" column displays the model's output. In addition, the "model" column indicates the name of the model used, and finally, the "category" column specifies the type of task for each question.
+
+Our next step is to utilize GPT-4 to evaluate and score our model's predictions. We have chosen this approach because current language models fine-tuned by instructions lack suitable evaluation metrics. Manual evaluation is also not feasible due to its high cost and time consumption, which makes it unsuitable for frequent experiments and evaluations.
+
+To use auto-eval, simply input your file through the command line. 
+
+```bash
+auto-eval file --config_file OPENAI_API_KEY_CONFIG_PATH \
+--eval_data_path model_predictions.json \
+--output_path eval_result_path.xlsx \
+--model gpt-4 \
+--interval 12 
+```
+
+Auto-eval will then perform the following steps:
+
+Step 1: Group questions based on the "prompt" column. Each group represents a single question and multiple model answers.
+
+Step 2: Organize prompts to help GPT-4 understand that it is evaluating the task and output scores for each answer.
+
+Step 3: Once all questions and answers have been evaluated, scoring results will be outputted.
+
+Please note that while this example only uses one file, you can also use multiple files with each representing the output of one model.
+
+
 ## Installation
 ```sh
 pip install -U auto-eval
 ```
 
-## Usage
+## Detail usage
 To utilize this repository, you must first obtain API keys from OpenAI, Microsoft Azure, or Anthropic. To acquire your OpenAI API key, visit their website at https://platform.openai.com/account/api-keys. For your Claude API key, go to the Anthropic website at https://console.anthropic.com/account/keys.
 
 Additionally, ensure that the base API for sending requests is provided. If necessary, specify a proxy URL such as "https://your_proxy_domain/v1". Relevant information for Azure APIs can be found on the Azure resource dashboard with an API format of `https://{your_organization}.openai.azure.com/`.
 
 The currently supported values for `api_type` are "open_ai", "azure", or "claude".
 
-### 1. Set up your API Key information in the local configuration file.
+### Sep 1. Set up your API Key information in the local configuration file.
 
 OpenAI config:
 ```json
@@ -45,7 +81,7 @@ Anthropic config:
 }
 ```
 
-### 2. Usage with command lines
+### Sep 2. Usage with command lines
 #### Evaluate single sample
 ```sh
 auto-eval line --config_file CHANGE_TO_YOUR_CONFIG_PATH \
@@ -231,6 +267,10 @@ LLMs outputs correspond to the question in the prompt, answers must be separated
 
 `--eval_categories`: array ${\color{grey}\text{Optional}}$ Defaults to null <br> Choose specific types of question categories to evaluate. This only works when the input file contains a "category" column corresponding to each question.
 
+`--question_column_names`: array ${\color{grey}\text{Optional}}$ Defaults to null <br> Specify specific columns as question columns. If multiple columns are specified, these columns will be concatenated with line breaks to form a complete question column.
+
+`--answer_column_names`: array ${\color{grey}\text{Optional}}$ Defaults to null <br> ChSpecify specific columns as answer columns. If multiple columns are specified, these columns will be concatenated with `\n` to form a complete answer column.
+
 `--sample_num`: number ${\color{grey}\text{Optional}}$ Defaults to 0<br>Sample number of prompt-answer pairs to evaluate.
 
 `--interval`: number ${\color{grey}\text{Optional}}$ Defaults to 1 <br> Sleep interval in seconds between each request to avoid exceeding the request rate limit. A larger value like 10 is recommended for GPT-4.
@@ -239,8 +279,7 @@ LLMs outputs correspond to the question in the prompt, answers must be separated
 
 `--score_by`: array ${\color{grey}\text{Optional}}$ Defaults to null <br> Used to determine the groups for the groupby `pandas.groupby(by=args.score_by)` to get the summary scores of certain groups.
 
-
 ## ToDo
 - [ ] Conbining multiple GPT-like models for prediction: routing or simply averaging.
-- [ ] Supporting prompts evaluation by output the accuracy of different prompts. 
+- [x] Supporting prompts evaluation by output the accuracy of different prompts. 
 - [ ] Configuring a default test set for prompt evaluation.

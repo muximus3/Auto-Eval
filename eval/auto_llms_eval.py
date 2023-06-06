@@ -11,7 +11,7 @@ import sys
 from dataclasses import dataclass
 from oneapi import OneAPITool
 sys.path.append(os.path.normpath(f'{os.path.dirname(os.path.abspath(__file__))}/..'))
-from eval.utils import df_saver, df_reader
+from eval.utils import df_saver, df_reader, binary_cross_entropy
 from eval.prompt_template import Prompter
 
 
@@ -73,22 +73,44 @@ def eval_one_group(
 
 
 
-def prepare_eval_data(eval_data_path: List[str], eval_categories: Optional[List[str]] = None, sample_num: int=0, eval_models: Optional[List[str]] = None) -> Tuple[List[pd.DataFrame],List[pd.DataFrame] ]:
+def prepare_eval_data(
+    eval_data_path: List[str],
+    eval_categories: Optional[List[str]] = None, 
+    question_column_names: Optional[List[str]] = None,
+    answer_column_names: Optional[List[str]] = None,
+    sample_num: int=0, 
+    eval_models: Optional[List[str]] = None
+) -> Tuple[List[pd.DataFrame],List[pd.DataFrame]]:
     eval_data = df_reader(eval_data_path[0]) if len(eval_data_path) == 1 else pd.concat([df_reader(file_path) for file_path in eval_data_path])
     eval_data = eval_data.fillna('')
-    if len({'instruction', 'input', 'output'} - set(eval_data.keys())) == 0:
+    # Deal with different data formats
+    if question_column_names is not None:
+        if len(question_column_names) > 1:
+            eval_data['question'] = eval_data[question_column_names].astype(str).agg('\n'.join, axis=1)
+        else:
+            eval_data['question'] = eval_data[question_column_names[0]]
+    if answer_column_names is not None:
+        if len(answer_column_names) > 1:
+            eval_data['output'] = eval_data[answer_column_names].astype(str).agg('\n'.join, axis=1)
+        else:
+            eval_data['output'] = eval_data[answer_column_names[0]]
+        
+    if len({'question', 'output'} - set(eval_data.keys())) == 0:
+        pass
+    elif len({'instruction', 'input', 'output'} - set(eval_data.keys())) == 0:
         eval_data['question'] = eval_data['instruction'].str.cat(
             eval_data['input'], sep=' ')
     elif len({'prompt', 'output'} - set(eval_data.keys())) == 0:
         eval_data['quesion'] = eval_data['prompt'].copy()
     elif len({'question', 'answer'} - set(eval_data.keys())) == 0:
         eval_data['output'] = eval_data['answer'].copy()
-    elif len({'question', 'output'} - set(eval_data.keys())) == 0:
-        pass
+    elif len({'question', 'target'} - set(eval_data.keys())) == 0:
+        eval_data['output'] = eval_data['target'].copy()
     else:
         raise KeyError(
-            f'Eval data columns must be either: ["instruction", "input", "output"] or ["prompt", "output"] or ["question", "output"]'
+            f'Eval data columns must be either: ["instruction", "input", "output"] or ["prompt", "output"] or ["question", "output"] or ["question", "target"] or ["question", "answer"]'
         )
+    
     # filter specific categories
     if eval_categories is not None and len(
             eval_categories) > 0 and 'category' in eval_data.keys():
@@ -129,10 +151,28 @@ def log_score_results(eval_results_df: pd.DataFrame, score_by: List[str]):
         print(
             f'\n{"-"*20} Scores by {score_by} {"-"*20}\n{scores.to_markdown(index=False)}'
         )
-        
-def evaluation_prompt_acc(eval_result_df: pd.DataFrame):
-    if 'targe_score' in eval_result_df.keys():
-        pass
+
+def log_eval_prompt_scores_loss(eval_results_df: pd.DataFrame):
+    """
+    We evaluate the prompt performance by the loss of the scores instead of accuracy.
+    Args:
+        eval_results_df (pd.DataFrame): 
+    """
+    if 'target_score' not in eval_results_df.keys():
+        return
+
+    none_empty_eval_results_df = eval_results_df[eval_results_df['target_score'].map(lambda x: x != '' and x == x)]
+    group_columns = ['category', 'question'] if 'category' in eval_results_df.keys() else ['question']
+    loss = none_empty_eval_results_df.groupby(group_columns)[['target_score', 'score']].apply(lambda x: binary_cross_entropy(x['score'], x['target_score']))
+
+    if 'category' in eval_results_df.keys():
+        loss = loss.reset_index().groupby("category")[0].agg(['mean', 'sum'])
+        print(f'\n{"-"*20} Eval prompt loss {"-"*20}\n\n{loss.to_markdown()}')
+    else:
+        loss = pd.DataFrame(loss)
+
+    print(f'Mean eval prompt loss: {loss["mean"].mean():.4f}')
+    print(f'Sum eval prompt loss: {loss["sum"].sum():.4f}')
 
 def save_results(results_df: pd.DataFrame, output_path: str):
     print(f'Saving evaluation results: {output_path}')
@@ -144,6 +184,8 @@ class EvalConfig:
     api_config_file: str
     eval_prompter: Prompter
     eval_data_path: str
+    question_column_names: Optional[List[str]] = None
+    answer_column_names: Optional[List[str]] = None
     output_path: str = ''
     engine: str = ''
     eval_categories: Optional[List[str]] = None
@@ -159,7 +201,7 @@ def eval_groups(
     eval_config: EvalConfig
 ):
     # Preparing data
-    scored_groups, unscored_groups = prepare_eval_data(eval_config.eval_data_path, eval_config.eval_categories, eval_config.sample_num, eval_config.eval_models)
+    scored_groups, unscored_groups = prepare_eval_data(eval_config.eval_data_path, eval_config.eval_categories, eval_config.question_column_names, eval_config.answer_column_names, eval_config.sample_num, eval_config.eval_models)
 
     # Init api tool and prompter
     tool = OneAPITool.from_config_file(config_file=eval_config.api_config_file)
@@ -184,6 +226,7 @@ def eval_groups(
 
     scored_results_df = pd.concat(scored_groups)
     log_score_results(eval_results_df=scored_results_df, score_by=eval_config.score_by)
+    log_eval_prompt_scores_loss(eval_results_df=scored_results_df)
     # Log score results
     print(f'Eval engine: {eval_config.engine}')
     print(f'Eval files: {eval_config.eval_data_path}')

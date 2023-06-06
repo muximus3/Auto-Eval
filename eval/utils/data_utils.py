@@ -3,6 +3,7 @@ import re
 import os
 import json
 import pandas as pd
+import numpy as np
 from typing import Union, List
 
 
@@ -97,3 +98,12 @@ def save_json(json_obj, save_path: str, ensure_ascii=False):
         
 def generate_letters(length, upcase=True):
     return [chr(ord('A' if upcase else 'a') + i) for i in range(length)]
+    
+
+def binary_cross_entropy(y_pred, y_true):
+    y_true = np.array(y_true).astype(np.float32)
+    y_pred = np.array(y_pred).astype(np.float32)
+    y_pred = np.clip(y_pred, 1e-7, 1 - 1e-7)  # avoid log(0)
+    y_true = np.clip(y_true, 1e-7, 1 - 1e-7)  # avoid log(0)
+    bce = -np.mean(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
+    return np.round(bce, 4)

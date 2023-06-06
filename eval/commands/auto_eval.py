@@ -88,6 +88,22 @@ def main():
         required=True,
     )
     file_parser.add_argument(
+        "-qcn",
+        "--question_column_names",
+        default=None,
+        nargs="+",
+        help="one or more column names for question",
+        required=False,
+    )
+    file_parser.add_argument(
+        "-acn",
+        "--answer_column_names",
+        default=None,
+        nargs="+",
+        help="one or more column names for answer",
+        required=False,
+    )
+    file_parser.add_argument(
         "-op", "--output_path", type=str, default="", help="", required=False
     )
     file_parser.add_argument(
@@ -158,6 +174,8 @@ def main():
                 api_config_file=args.config_file,
                 eval_prompter=eval_prompter,
                 eval_data_path=args.eval_data_path,
+                question_column_names=args.question_column_names,
+                answer_column_names=args.answer_column_names,
                 output_path=args.output_path,
                 engine=args.model,
                 eval_categories=args.eval_categories,
