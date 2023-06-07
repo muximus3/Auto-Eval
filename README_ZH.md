@@ -54,7 +54,6 @@ pip install -U auto-eval
 
 此外，需要配置API的base url。如果需要，可以指定代理URL，例如 “https://your_proxy_domain/v1”。关于Azure API的相关信息可以在Azure资源仪表板上找到，API格式为 “https://{your_organization}.openai.azure.com/”。
 
-可以参考下面的配置。
 
 ### 步骤1：在本地配置文件中设置API密钥信息。
 
@@ -236,7 +235,7 @@ auto-eval file --config_file CHANGE_TO_YOUR_CONFIG_PATH \
 `--config_file` string ${\color{orange}\text{必需}}$ <br>
 包含 API 密钥信息的本地配置文件。
 
-<span id="jump">`--template_path`${\color{grey}\text{可选}}$
+<span id="jump">`--template_path` string ${\color{grey}\text{可选}}$
 <br>模板文件路径应该是 JSON 格式的，指示模型评估并评论每个答案，以及在 JSON 格式中输出摘要分数，例如 `{"A": 0, "B": 0.1}`。
 
 如果没有指定模板，将使用下面的默认模板。
@@ -301,7 +300,7 @@ Finally, output all [Candidate answers] scores (0-1) in a summary format of
 
 使用哪个采样温度。更高的值（例如1）会使输出更随机，而较低的值（例如0.1）会使其更加集中和确定性。
 
-`--max_new_tokens` integer ${\color{grey}\text{可选}}$ 默认为 2048
+`--max_new_tokens` number ${\color{grey}\text{可选}}$ 默认为 2048
 
 生成的最大字符数。模型的上下文长度限制了输入输出的总长度。
 
