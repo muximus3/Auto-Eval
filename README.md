@@ -1,4 +1,5 @@
 # Auto-Eval
+**[中文文档](README_ZH.md)**
 
 **Auto-Eval** utilizes ChatGPT (GPT-3.5-turbo), GPT-4, and Claude's API to evaluate language models with a single command. 
 
@@ -174,7 +175,8 @@ auto-eval file --config_file CHANGE_TO_YOUR_CONFIG_PATH \
     - `{"instruction", "input", "output"}`
     -  `{"prompt", "output"}`
     -  `{"question", "answer"}`
-    -  `{"question", "output"}` <br>
+    -  `{"question", "output"}` 
+    - `{"question", "target"}`<br>
 
     The "question," "prompt," and "instruction" + "input" refer to the original inquiry, such as "Please calculate carefully: 1+1=?" or "Explain landing on the moon like I am five." The  "answer" and "output" represent the predicted answer of the model for a given question. If the format is in an {"instruction", "input"} form, we will concatenate both elements to create a complete question. <br>
 
