@@ -10,7 +10,7 @@ from typing import Union, List
 def df_reader(data_path, header: Union[int, None] = 0, usecols: Union[List[Union[str, int]], None] = None ,sep='\t', sheet_name=0) -> pd.DataFrame:
     if data_path.endswith('json'):
         df_data = pd.read_json(data_path)
-    if data_path.endswith('jsonl'):
+    elif data_path.endswith('jsonl'):
         df_data = pd.read_json(data_path, lines=True)
     elif data_path.endswith('xlsx'):
         df_data = pd.read_excel(data_path, header=header, usecols=usecols, sheet_name=sheet_name)
