@@ -53,12 +53,17 @@ def extract_last_json(text) -> dict:
     json_data = json.loads(json_str)
     return json_data
 
-def extract_scores(text) -> dict:
+def extract_scores_bk(text) -> dict:
     pattern = r"([A-Z])'?[:.]\s*([\d.]+)"
     result = re.findall(pattern, text)
     scores = {item[0]: float(item[1]) for item in result}    
     return scores
 
+def extract_score(text) -> float:
+    pattern = r"([A-Z])['\"]?[:.]\s*([\d.]+|\"[\d.]+\")"
+    result = re.findall(pattern, text)
+    scores = {item[0]: float(item[1].replace("\"", "")) for item in result}    
+    return scores 
 
 def extract_numbers(text):
     numbers = re.findall(r'\d+', text)
