@@ -59,7 +59,7 @@ def extract_scores_bk(text) -> dict:
     scores = {item[0]: float(item[1]) for item in result}    
     return scores
 
-def extract_score(text) -> float:
+def extract_scores(text) -> float:
     pattern = r"([A-Z])['\"]?[:.]\s*([\d.]+|\"[\d.]+\")"
     result = re.findall(pattern, text)
     scores = {item[0]: float(item[1].replace("\"", "")) for item in result}    
