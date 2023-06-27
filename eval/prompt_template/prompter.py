@@ -42,7 +42,7 @@ class EvalPrompter(Prompter):
         """
         candidate_answer_numbers = generate_letters(len(candidate_answers))
         format_option_data = '\n\n'.join([
-            f'{candidate_answer_numbers[i]}. {candidate_answers[i]}'
+            f'**{candidate_answer_numbers[i]}**. {candidate_answers[i]}'
             for i in range(len(candidate_answers))
         ])
 
