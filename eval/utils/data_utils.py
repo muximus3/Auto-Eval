@@ -66,8 +66,9 @@ def extract_scores(text) -> float:
     return scores 
 
 def extract_numbers(text):
-    numbers = re.findall(r'\d+', text)
-    numbers = [float(number) for number in numbers]
+    pattern = r"[-+]?\d*\.\d+|\d+"
+    result = re.findall(pattern, text)
+    return [float(i) if '.' in i else int(i) for i in result]
 
 
 def df2xlsx(df: pd.DataFrame, save_path: str, sheet_name='Sheet1', mode='w', index=False):

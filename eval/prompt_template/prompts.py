@@ -39,7 +39,7 @@ Candidate answers:
 {answers}
 ```
 
-Please evaluate each candidate's answer based on its accuracy, professionalism, and ability to provide necessary information without being too verbose.
+Please first answer the question independently without referring to candidate answers to obtain the correct answer, then evaluate each candidate's answer based on its accuracy, professionalism, and ability to provide necessary information without being too verbose.
 Then assign a rating score between 0-1 along with brief comments.
 Finally, output all [Candidate answers] scores in JSON format: {{"number": "{{score}}"}}.
 """
@@ -79,7 +79,7 @@ Candidate answers:
 {answers}
 ```
 
-Please evaluate each candidate's answer based on its accuracy, professionalism, and ability to provide necessary information without being too verbose.
+Please first answer the question independently without referring to candidate answers to obtain the correct answer, then evaluate each candidate's answer based on its accuracy, professionalism, and ability to provide necessary information without being too verbose.
 Then assign a rating score between -1 and 1 along with brief comments.
 Finally, output all [Candidate answers] scores in JSON format: {{"number": "{{score}}"}}.
 """
