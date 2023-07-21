@@ -38,7 +38,7 @@ def eval_one_qa(
         raw_response = api_tool.simple_chat(eval_prompt,
                                       model=engine,
                                       temperature=temperature,
-                                      max_new_tokens=max_new_tokens)
+                                      max_new_tokens=max_new_tokens, stream=False)
         scores = eval_prompter.extract_result_from_response(raw_response)
         scores = [scores[shuffle_index.index(i)] for i in range(len(scores))]
         return scores, raw_response
@@ -321,18 +321,21 @@ def eval_groups(
 
 
 
-async def bound_fetch(sem, *params, **kwargs):
+async def bound_fetch(sem, pbar,*params, **kwargs):
     async with sem:
-        return await aeval_one_group(*params, **kwargs)
+        result = await aeval_one_group(*params, **kwargs)
+        pbar.update(1)
+        return result
 
 async def aeval_groups(eval_config: EvalConfig, unscored_groups: List[pd.DataFrame]):
     # Preparing data
     process_num = len(eval_config.api_config_files)
+    pbar = tqdm(total=len(unscored_groups))
     sem = asyncio.Semaphore(process_num)
     async with aiohttp.ClientSession() as session:
         openai.aiosession.set(session)
         tools = [OneAPITool.from_config_file(config_file) for config_file in eval_config.api_config_files]
-        tasks = [asyncio.ensure_future(bound_fetch(sem, tools[i%process_num], eval_config.eval_prompter,  group,  eval_config.engine, eval_config.temperature, eval_config.max_new_tokens)) for i, group in enumerate(unscored_groups)]
+        tasks = [asyncio.ensure_future(bound_fetch(sem, pbar, tools[i%process_num], eval_config.eval_prompter,  group,  eval_config.engine, eval_config.temperature, eval_config.max_new_tokens)) for i, group in enumerate(unscored_groups)]
         results = await asyncio.gather(*tasks)
     return results
 
