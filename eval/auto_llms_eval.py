@@ -6,9 +6,13 @@ from typing import Union, List
 import random
 from tqdm import tqdm
 from typing import Optional, Tuple
+import numpy as np
 import time
 import sys
 from dataclasses import dataclass
+import aiohttp
+import asyncio
+import openai
 from oneapi import OneAPITool
 sys.path.append(os.path.normpath(f'{os.path.dirname(os.path.abspath(__file__))}/..'))
 from eval.utils import df_saver, df_reader, binary_cross_entropy
@@ -25,20 +29,51 @@ def eval_one_qa(
              temperature=0.1,
              max_new_tokens=2048) -> Tuple[Union[List[float], None], str]:
     raw_response = ''
+    shuffle_index = list(range(len(candidate_answers)))
+    np.random.shuffle(shuffle_index)
+    shuffle_answers = [candidate_answers[i] for i in shuffle_index]
     eval_prompt = eval_prompter.generate_prompt(question, target,
-                                                candidate_answers)
+                                                shuffle_answers)
     try:
         raw_response = api_tool.simple_chat(eval_prompt,
                                       model=engine,
                                       temperature=temperature,
                                       max_new_tokens=max_new_tokens)
         scores = eval_prompter.extract_result_from_response(raw_response)
+        scores = [scores[shuffle_index.index(i)] for i in range(len(scores))]
         return scores, raw_response
     except Exception as e:
         print(f'error, request result:{raw_response}, exception:{e}')
         traceback.print_exc()
         return None, raw_response
 
+async def aeval_one_qa(
+             api_tool: OneAPITool,
+             eval_prompter: Prompter,
+             question: str,
+             candidate_answers: List[str],
+             target: Union[str, None]='',
+             engine: str='',
+             temperature=0.1,
+             max_new_tokens=2048) -> Tuple[Union[List[float], None], str]:
+    raw_response = ''
+    shuffle_index = list(range(len(candidate_answers)))
+    np.random.shuffle(shuffle_index)
+    shuffle_answers = [candidate_answers[i] for i in shuffle_index]
+    eval_prompt = eval_prompter.generate_prompt(question, target,
+                                                shuffle_answers)
+    try:
+        raw_response = await api_tool.asimple_chat(eval_prompt,
+                                      model=engine,
+                                      temperature=temperature,
+                                      max_new_tokens=max_new_tokens)
+        scores = eval_prompter.extract_result_from_response(raw_response)
+        scores = [scores[shuffle_index.index(i)] for i in range(len(scores))]
+        return scores, raw_response
+    except Exception as e:
+        print(f'error, request result:{raw_response}, exception:{e}')
+        traceback.print_exc()
+        return None, raw_response
 
 def eval_one_group(
     api_tool: OneAPITool,
@@ -56,6 +91,38 @@ def eval_one_group(
     else:
         target = ''
     scores, raw_response = eval_one_qa(api_tool=api_tool,
+                      eval_prompter=eval_prompter,
+                      question=question,
+                      candidate_answers=candidate_answers,
+                      target=target,
+                      engine=engine,
+                      temperature=temperature,
+                      max_new_tokens=max_new_tokens)
+    if scores is not None and len(scores) == len(candidate_answers):
+        group.at[0, 'raw_response'] = raw_response
+        for i in range(len(scores)):
+            group.at[i, 'score'] = scores[i]
+        return group
+    else:
+        return None
+
+        
+async def aeval_one_group(
+    api_tool: OneAPITool,
+    eval_prompter: Prompter,
+    data_group: pd.DataFrame,
+    engine: str,
+    temperature=0.1,
+    max_new_tokens=2048,
+) -> Union[pd.DataFrame, None]:
+    group = data_group.reset_index(drop=True)
+    question = group['question'].unique()[0]
+    candidate_answers = group['output']
+    if 'target' in data_group.keys():
+        target = group['target'].unique()[0]
+    else:
+        target = ''
+    scores, raw_response = await aeval_one_qa(api_tool=api_tool,
                       eval_prompter=eval_prompter,
                       question=question,
                       candidate_answers=candidate_answers,
@@ -181,7 +248,7 @@ def save_results(results_df: pd.DataFrame, output_path: str):
 
 @dataclass
 class EvalConfig:
-    api_config_file: str
+    api_config_files: str
     eval_prompter: Prompter
     eval_data_path: str
     question_column_names: Optional[List[str]] = None
@@ -203,26 +270,42 @@ def eval_groups(
     # Preparing data
     scored_groups, unscored_groups = prepare_eval_data(eval_config.eval_data_path, eval_config.eval_categories, eval_config.question_column_names, eval_config.answer_column_names, eval_config.sample_num, eval_config.eval_models)
 
+    process_num = len(eval_config.api_config_files)
     # Init api tool and prompter
-    tool = OneAPITool.from_config_file(config_file=eval_config.api_config_file)
-
-    failed_groups = []
-    for group in tqdm(unscored_groups):
-        result = eval_one_group(tool, eval_config.eval_prompter,  group,  eval_config.engine, eval_config.temperature, eval_config.max_new_tokens)
-        if result is not None:
-            scored_groups.append(result)
-        else:
-            failed_groups.append(group)
-        time.sleep(eval_config.request_interval)
-
-    # Retry failed requests
-    if len(failed_groups) > 0 and eval_config.retry:
-        for group in tqdm(failed_groups.copy(), desc='RETRY'):
+    if process_num == 1:
+        failed_groups = []
+        tool = OneAPITool.from_config_file(eval_config.api_config_files[0])
+        for group in tqdm(unscored_groups):
             result = eval_one_group(tool, eval_config.eval_prompter,  group,  eval_config.engine, eval_config.temperature, eval_config.max_new_tokens)
             if result is not None:
                 scored_groups.append(result)
-                failed_groups = [df for df in failed_groups if not df.equals(group)]
+            else:
+                failed_groups.append(group)
             time.sleep(eval_config.request_interval)
+
+        # Retry failed requests
+        if len(failed_groups) > 0 and eval_config.retry:
+            for group in tqdm(failed_groups.copy(), desc='RETRY'):
+                result = eval_one_group(tool, eval_config.eval_prompter,  group,  eval_config.engine, eval_config.temperature, eval_config.max_new_tokens)
+                if result is not None:
+                    scored_groups.append(result)
+                    failed_groups = [df for df in failed_groups if not df.equals(group)]
+                time.sleep(eval_config.request_interval)
+    else:
+        score_results = asyncio.run(aeval_groups(eval_config, unscored_groups))
+        failed_groups = []
+        for result in score_results:
+            if result is not None:
+                scored_groups.append(result)
+            else:
+                failed_groups.append(result)
+        # Retry failed requests
+        if len(failed_groups) > 0 and eval_config.retry:
+            score_results = asyncio.run(aeval_groups(eval_config, failed_groups))
+            for result in score_results:
+                if result is not None:
+                    scored_groups.append(result)
+                    failed_groups = [df for df in failed_groups if not df.equals(result)]
 
     scored_results_df = pd.concat(scored_groups)
     log_score_results(eval_results_df=scored_results_df, score_by=eval_config.score_by)
@@ -235,3 +318,23 @@ def eval_groups(
     # Save results
     if eval_config.output_path:
         save_results(results_df=results_df, output_path=eval_config.output_path)
+
+
+
+async def bound_fetch(sem, *params, **kwargs):
+    async with sem:
+        return await aeval_one_group(*params, **kwargs)
+
+async def aeval_groups(eval_config: EvalConfig, unscored_groups: List[pd.DataFrame]):
+    # Preparing data
+    process_num = len(eval_config.api_config_files)
+    sem = asyncio.Semaphore(process_num)
+    async with aiohttp.ClientSession() as session:
+        openai.aiosession.set(session)
+        tools = [OneAPITool.from_config_file(config_file) for config_file in eval_config.api_config_files]
+        tasks = [asyncio.ensure_future(bound_fetch(sem, tools[i%process_num], eval_config.eval_prompter,  group,  eval_config.engine, eval_config.temperature, eval_config.max_new_tokens)) for i, group in enumerate(unscored_groups)]
+        results = await asyncio.gather(*tasks)
+    return results
+
+
+

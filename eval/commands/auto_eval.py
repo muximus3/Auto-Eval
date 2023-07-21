@@ -10,7 +10,11 @@ from eval.auto_llms_eval import eval_one_group, eval_one_qa, eval_groups, EvalCo
 
 def add_shared_arguments(parser):
     parser.add_argument(
-        "-c", "--config_file", type=str, help="config file path", required=True
+        "-c", "--config_files",
+        default=None,
+        nargs="+", 
+        help="config file path", 
+        required=True
     )
     parser.add_argument(
         "-tp",
@@ -155,7 +159,7 @@ def main():
             eval_prompter = prompter.EvalPrompter(prompts.EVAL_WITH_TARGET_TEMPLATE, prompts.EVAL_WITHOUT_TARGET_TEMPLATE, args.verbose)
 
     if args.command == "line":
-        tool = OneAPITool.from_config_file(args.config_file)
+        tool = OneAPITool.from_config_file(args.config_files[0])
         score, raw_response = eval_one_qa(
             api_tool=tool,
             eval_prompter=eval_prompter,
@@ -171,7 +175,7 @@ def main():
     elif args.command == "file":
         eval_groups(
             EvalConfig(
-                api_config_file=args.config_file,
+                api_config_files=args.config_files,
                 eval_prompter=eval_prompter,
                 eval_data_path=args.eval_data_path,
                 question_column_names=args.question_column_names,
