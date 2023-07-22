@@ -102,9 +102,9 @@ def eval_one_group(
         group.at[0, 'raw_response'] = raw_response
         for i in range(len(scores)):
             group.at[i, 'score'] = scores[i]
-        return group
+        return group, True
     else:
-        return None
+        return data_group, False
 
         
 async def aeval_one_group(
@@ -134,9 +134,9 @@ async def aeval_one_group(
         group.at[0, 'raw_response'] = raw_response
         for i in range(len(scores)):
             group.at[i, 'score'] = scores[i]
-        return group
+        return group, True
     else:
-        return None
+        return data_group, False
 
 
 
@@ -276,8 +276,8 @@ def eval_groups(
         failed_groups = []
         tool = OneAPITool.from_config_file(eval_config.api_config_files[0])
         for group in tqdm(unscored_groups):
-            result = eval_one_group(tool, eval_config.eval_prompter,  group,  eval_config.engine, eval_config.temperature, eval_config.max_new_tokens)
-            if result is not None:
+            result, status = eval_one_group(tool, eval_config.eval_prompter,  group,  eval_config.engine, eval_config.temperature, eval_config.max_new_tokens)
+            if status:
                 scored_groups.append(result)
             else:
                 failed_groups.append(group)
@@ -286,16 +286,16 @@ def eval_groups(
         # Retry failed requests
         if len(failed_groups) > 0 and eval_config.retry:
             for group in tqdm(failed_groups.copy(), desc='RETRY'):
-                result = eval_one_group(tool, eval_config.eval_prompter,  group,  eval_config.engine, eval_config.temperature, eval_config.max_new_tokens)
-                if result is not None:
+                result, status = eval_one_group(tool, eval_config.eval_prompter,  group,  eval_config.engine, eval_config.temperature, eval_config.max_new_tokens)
+                if status:
                     scored_groups.append(result)
                     failed_groups = [df for df in failed_groups if not df.equals(group)]
                 time.sleep(eval_config.request_interval)
     else:
         score_results = asyncio.run(aeval_groups(eval_config, unscored_groups))
         failed_groups = []
-        for result in score_results:
-            if result is not None:
+        for (result, status) in score_results:
+            if status:
                 scored_groups.append(result)
             else:
                 failed_groups.append(result)
@@ -303,7 +303,7 @@ def eval_groups(
         if len(failed_groups) > 0 and eval_config.retry:
             score_results = asyncio.run(aeval_groups(eval_config, failed_groups))
             for result in score_results:
-                if result is not None:
+                if status:
                     scored_groups.append(result)
                     failed_groups = [df for df in failed_groups if not df.equals(result)]
 
