@@ -37,7 +37,7 @@ def add_shared_arguments(parser):
         "-v",
         "--verbose",
         type=bool,
-        default=True,
+        default=False,
         help="print every prompt and response detail",
         required=False,
     )

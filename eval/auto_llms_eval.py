@@ -11,13 +11,12 @@ import time
 import sys
 from dataclasses import dataclass
 import aiohttp
-import asyncio
 import openai
+import asyncio
 from oneapi import OneAPITool
 sys.path.append(os.path.normpath(f'{os.path.dirname(os.path.abspath(__file__))}/..'))
 from eval.utils import df_saver, df_reader, binary_cross_entropy
 from eval.prompt_template import Prompter
-
 
 def eval_one_qa(
              api_tool: OneAPITool,
@@ -285,11 +284,13 @@ def eval_groups(
 
         # Retry failed requests
         if len(failed_groups) > 0 and eval_config.retry:
-            for group in tqdm(failed_groups.copy(), desc='RETRY'):
+            retry_failed_groups = []
+            for group in tqdm(failed_groups, desc='RETRY'):
                 result, status = eval_one_group(tool, eval_config.eval_prompter,  group,  eval_config.engine, eval_config.temperature, eval_config.max_new_tokens)
                 if status:
                     scored_groups.append(result)
-                    failed_groups = [df for df in failed_groups if not df.equals(group)]
+                else:
+                    retry_failed_groups.append(group)
                 time.sleep(eval_config.request_interval)
     else:
         score_results = asyncio.run(aeval_groups(eval_config, unscored_groups))
@@ -301,12 +302,14 @@ def eval_groups(
                 failed_groups.append(result)
         # Retry failed requests
         if len(failed_groups) > 0 and eval_config.retry:
-            score_results = asyncio.run(aeval_groups(eval_config, failed_groups))
+            retry_failed_groups = []
+            score_results = asyncio.run(aeval_groups(eval_config, failed_groups, desc='RETRY'))
             for (result, status) in score_results:
                 if status:
                     scored_groups.append(result)
-                    failed_groups = [df for df in failed_groups if not df.equals(result)]
-
+                else:
+                    retry_failed_groups.append(result)
+    failed_groups = retry_failed_groups if eval_config.retry and len(failed_groups) > 0 else failed_groups
     scored_results_df = pd.concat(scored_groups)
     log_score_results(eval_results_df=scored_results_df, score_by=eval_config.score_by)
     log_eval_prompt_scores_loss(eval_results_df=scored_results_df)
@@ -321,22 +324,27 @@ def eval_groups(
 
 
 
-async def bound_fetch(sem, pbar,*params, **kwargs):
+async def bound_fetch(sem, *params, **kwargs):
     async with sem:
         result = await aeval_one_group(*params, **kwargs)
-        pbar.update(1)
         return result
 
-async def aeval_groups(eval_config: EvalConfig, unscored_groups: List[pd.DataFrame]):
+async def aeval_groups(eval_config: EvalConfig, unscored_groups: List[pd.DataFrame], desc: str='EVAL'):
     # Preparing data
     process_num = len(eval_config.api_config_files)
-    pbar = tqdm(total=len(unscored_groups))
+    pbar = tqdm(total=len(unscored_groups), desc=desc)
     sem = asyncio.Semaphore(process_num)
+    tools = [OneAPITool.from_config_file(config_file) for config_file in eval_config.api_config_files]
+    tasks = [asyncio.ensure_future(bound_fetch(sem, tools[i%process_num], eval_config.eval_prompter,  group,  eval_config.engine, eval_config.temperature, eval_config.max_new_tokens)) for i, group in enumerate(unscored_groups)]
+    task_batches = [tasks[i:i + process_num] for i in range(0, len(tasks), process_num)]
+    results = []
     async with aiohttp.ClientSession() as session:
         openai.aiosession.set(session)
-        tools = [OneAPITool.from_config_file(config_file) for config_file in eval_config.api_config_files]
-        tasks = [asyncio.ensure_future(bound_fetch(sem, pbar, tools[i%process_num], eval_config.eval_prompter,  group,  eval_config.engine, eval_config.temperature, eval_config.max_new_tokens)) for i, group in enumerate(unscored_groups)]
-        results = await asyncio.gather(*tasks)
+        for task_batch in task_batches:
+            batch_results = await asyncio.gather(*task_batch)
+            results.extend(batch_results)
+            pbar.update(len(task_batch))
+            time.sleep(eval_config.request_interval)
     return results
 
 
