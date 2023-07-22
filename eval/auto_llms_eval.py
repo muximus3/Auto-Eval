@@ -302,7 +302,7 @@ def eval_groups(
         # Retry failed requests
         if len(failed_groups) > 0 and eval_config.retry:
             score_results = asyncio.run(aeval_groups(eval_config, failed_groups))
-            for result in score_results:
+            for (result, status) in score_results:
                 if status:
                     scored_groups.append(result)
                     failed_groups = [df for df in failed_groups if not df.equals(result)]
