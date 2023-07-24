@@ -270,10 +270,13 @@ def eval_groups(
     scored_groups, unscored_groups = prepare_eval_data(eval_config.eval_data_path, eval_config.eval_categories, eval_config.question_column_names, eval_config.answer_column_names, eval_config.sample_num, eval_config.eval_models)
 
     process_num = len(eval_config.api_config_files)
-    if eval_config.engines is not None and len(eval_config.engines) > 0:
-        assert len(eval_config.engines) == process_num, f'Number of engines must be equal to number of api config files, but got {len(eval_config.engines)} engines and {process_num} api config files.'
+
     eval_config.engines = eval_config.engines if eval_config.engines is not None else [''] * process_num
-    
+    if eval_config.engines is not None and len(eval_config.engines) == 1:
+        eval_config.engines = eval_config.engines * process_num
+    if eval_config.engines is not None and len(eval_config.engines) > 1:
+        assert len(eval_config.engines) == process_num, f'Number of engines must be equal to number of api config files when specific multiple engines, but got {len(eval_config.engines)} engines and {process_num} api config files.'
+
     # Init api tool and prompter
     if process_num == 1:
         failed_groups = []
