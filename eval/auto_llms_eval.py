@@ -247,13 +247,13 @@ def save_results(results_df: pd.DataFrame, output_path: str):
 
 @dataclass
 class EvalConfig:
-    api_config_files: str
+    api_config_files: list
     eval_prompter: Prompter
     eval_data_path: str
     question_column_names: Optional[List[str]] = None
     answer_column_names: Optional[List[str]] = None
     output_path: str = ''
-    engine: str = ''
+    engines: Optional[List[str]] = None
     eval_categories: Optional[List[str]] = None
     eval_models: Optional[List[str]] = None
     score_by: Optional[List[str]] = None
@@ -270,12 +270,16 @@ def eval_groups(
     scored_groups, unscored_groups = prepare_eval_data(eval_config.eval_data_path, eval_config.eval_categories, eval_config.question_column_names, eval_config.answer_column_names, eval_config.sample_num, eval_config.eval_models)
 
     process_num = len(eval_config.api_config_files)
+    if eval_config.engines is not None and len(eval_config.engines) > 0:
+        assert len(eval_config.engines) == process_num, f'Number of engines must be equal to number of api config files, but got {len(eval_config.engines)} engines and {process_num} api config files.'
+    eval_config.engines = eval_config.engines if eval_config.engines is not None else [''] * process_num
+    
     # Init api tool and prompter
     if process_num == 1:
         failed_groups = []
         tool = OneAPITool.from_config_file(eval_config.api_config_files[0])
         for group in tqdm(unscored_groups):
-            result, status = eval_one_group(tool, eval_config.eval_prompter,  group,  eval_config.engine, eval_config.temperature, eval_config.max_new_tokens)
+            result, status = eval_one_group(tool, eval_config.eval_prompter,  group,  eval_config.engines[0], eval_config.temperature, eval_config.max_new_tokens)
             if status:
                 scored_groups.append(result)
             else:
@@ -286,7 +290,7 @@ def eval_groups(
         if len(failed_groups) > 0 and eval_config.retry:
             retry_failed_groups = []
             for group in tqdm(failed_groups, desc='RETRY'):
-                result, status = eval_one_group(tool, eval_config.eval_prompter,  group,  eval_config.engine, eval_config.temperature, eval_config.max_new_tokens)
+                result, status = eval_one_group(tool, eval_config.eval_prompter,  group,  eval_config.engines[0], eval_config.temperature, eval_config.max_new_tokens)
                 if status:
                     scored_groups.append(result)
                 else:
@@ -314,7 +318,7 @@ def eval_groups(
     log_score_results(eval_results_df=scored_results_df, score_by=eval_config.score_by)
     log_eval_prompt_scores_loss(eval_results_df=scored_results_df)
     # Log score results
-    print(f'Eval engine: {eval_config.engine}')
+    print(f'Eval engine: {eval_config.engines}')
     print(f'Eval files: {eval_config.eval_data_path}')
     print(f'Failed requests: {len(failed_groups)}/{len(scored_groups) + len(failed_groups)}')
     results_df = pd.concat([scored_results_df, pd.concat(failed_groups)]) if len(failed_groups) > 0 else scored_results_df
@@ -335,7 +339,7 @@ async def aeval_groups(eval_config: EvalConfig, unscored_groups: List[pd.DataFra
     pbar = tqdm(total=len(unscored_groups), desc=desc)
     sem = asyncio.Semaphore(process_num)
     tools = [OneAPITool.from_config_file(config_file) for config_file in eval_config.api_config_files]
-    tasks = [asyncio.ensure_future(bound_fetch(sem, tools[i%process_num], eval_config.eval_prompter,  group,  eval_config.engine, eval_config.temperature, eval_config.max_new_tokens)) for i, group in enumerate(unscored_groups)]
+    tasks = [asyncio.ensure_future(bound_fetch(sem, tools[i%process_num], eval_config.eval_prompter,  group,  eval_config.engines[i%process_num], eval_config.temperature, eval_config.max_new_tokens)) for i, group in enumerate(unscored_groups)]
     task_batches = [tasks[i:i + process_num] for i in range(0, len(tasks), process_num)]
     results = []
     async with aiohttp.ClientSession() as session:

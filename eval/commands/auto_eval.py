@@ -44,7 +44,8 @@ def add_shared_arguments(parser):
     parser.add_argument(
         "-m",
         "--model",
-        default='',
+        default=None,
+        nargs="+", 
         help="evaluate model name, e.g., gpt-35-turbo, gpt-4, please using larger models like GPT-4 for more difficult questions and faster models like GPT-3.5-turbo for simpler ones.",
         required=False,
     )
@@ -166,7 +167,7 @@ def main():
             question=args.prompt,
             candidate_answers=args.answers,
             target=args.target,
-            engine=args.model,
+            engine=args.model[0],
             temperature=args.temperature,
             max_new_tokens=args.max_new_tokens,
         )
@@ -181,7 +182,7 @@ def main():
                 question_column_names=args.question_column_names,
                 answer_column_names=args.answer_column_names,
                 output_path=args.output_path,
-                engine=args.model,
+                engines=args.model,
                 eval_categories=args.eval_categories,
                 eval_models=args.eval_models,
                 sample_num=args.sample_num,
