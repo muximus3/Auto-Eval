@@ -59,7 +59,7 @@ OpenAI config:
 ```json
 {
     "api_key": "YOUR_API_KEY",
-    "api": "https://api.openai.com/v1",
+    "api_base": "https://api.openai.com/v1",
     "api_type": "open_ai"
 }
 ```
@@ -67,7 +67,7 @@ Azure OpenAI config:
 ```json
 {
     "api_key": "YOUR_API_KEY",
-    "api": "Replace with your Azure OpenAI resource's endpoint value.",
+    "api_base": "Replace with your Azure OpenAI resource's endpoint value.",
     "api_type": "azure"
 }
 ```
@@ -75,7 +75,7 @@ Anthropic config:
 ```json
 {
     "api_key": "YOUR_API_KEY",
-    "api": "https://api.anthropic.com",
+    "api_base": "https://api.anthropic.com",
     "api_type": "claude"
 }
 ```
