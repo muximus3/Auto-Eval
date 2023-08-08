@@ -7,34 +7,42 @@ import numpy as np
 from typing import Union, List
 
 
-def df_reader(data_path, header: Union[int, None] = 0, usecols: Union[List[Union[str, int]], None] = None ,sep='\t', sheet_name=0) -> pd.DataFrame:
-    if data_path.endswith('json'):
-        df_data = pd.read_json(data_path)
-    elif data_path.endswith('jsonl'):
-        df_data = pd.read_json(data_path, lines=True)
-    elif data_path.endswith('xlsx'):
-        df_data = pd.read_excel(data_path, header=header, usecols=usecols, sheet_name=sheet_name)
-    elif data_path.endswith('.pkl'):
-        df_data = pd.read_pickle(data_path)
-    elif data_path.endswith('csv'):
-        df_data = pd.read_csv(data_path, header=header, usecols=usecols, sep=sep)
-    elif data_path.endswith('.parquet'):
-        df_data = pd.read_parquet(data_path)
-    else:
-        raise AssertionError(f'not supported file type:{data_path}, suport types: json, jsonl, xlsx, csv')
+def df_reader(data_path, header: int | None = 0, usecols: list[str | int] | None = None ,sep='\t', sheet_name=0) -> pd.DataFrame:
+    extention = data_path.split('.')[-1]
+    match extention:
+        case 'jsonl':
+            df_data = pd.read_json(data_path, lines=True, convert_dates=False)
+        case 'json':
+            df_data = pd.read_json(data_path)
+        case 'xlsx':
+            df_data = pd.read_excel(data_path,header=header, usecols=usecols, sheet_name=sheet_name)
+        case 'csv' | 'tsv':
+            df_data = pd.read_csv(data_path, header=header, usecols=usecols, sep=sep)
+        case 'pkl':
+            df_data = pd.read_pickle(data_path)
+        case 'parquet':
+            df_data = pd.read_parquet(data_path)
+        case _:
+            raise AssertionError(f'not supported file type:{data_path}, suport types: json, jsonl, xlsx, csv, parquet, pkl')
     return df_data
-
+    
 def df_saver(df: pd.DataFrame, data_path):
-    if data_path.endswith('json'):
-        df.to_json(data_path, orient='records', force_ascii=False)
-    if data_path.endswith('jsonl'):
-        df.to_json(data_path, orient='records', force_ascii=False, lines=True)
-    elif data_path.endswith('xlsx'):
-        df2xlsx(df, data_path, index=False)
-    elif data_path.endswith('csv'):
-        df.to_csv(data_path)
-    else:
-        raise AssertionError(f'not supported file type:{data_path}, suport types: json, jsonl, xlsx, csv')
+    extention = data_path.split('.')[-1]
+    match extention:
+        case 'jsonl':
+            df.to_json(data_path, orient='records', force_ascii=False, lines=True)
+        case 'json':
+            df.to_json(data_path, orient='records', force_ascii=False)
+        case 'xlsx':
+            df2xlsx(df, data_path, index=False)
+        case 'csv' | 'tsv':
+            df.to_csv(data_path)
+        case 'pkl':
+            df.to_pickle(data_path)
+        case 'parquet':
+            df.to_parquet(data_path)
+        case _:
+            raise AssertionError(f'not supported file type:{data_path}, suport types: json, jsonl, xlsx, csv')
     
 
 def extract_all_json(text, merged_return=True):

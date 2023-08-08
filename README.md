@@ -42,6 +42,8 @@ Please note that while this example only uses one file, you can also use multipl
 
 
 ## Installation
+Requirements Python >=3.10
+
 ```sh
 pip install -U auto-eval
 ```

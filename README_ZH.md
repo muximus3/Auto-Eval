@@ -42,6 +42,7 @@ Auto-Eval将执行以下步骤：
 请注意，尽管此示例仅使用一个文件，但您也可以使用多个文件，每个文件代表一个模型的输出。
 
 ## 安装
+Requirements Python >=3.10
 
 ```
 pip install -U auto-eval
