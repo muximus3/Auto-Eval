@@ -7,6 +7,15 @@ from eval.prompt_template import prompter, prompts
 from eval.utils.data_utils import df_reader
 from eval.auto_llms_eval import eval_one_group, eval_one_qa, eval_groups, EvalConfig
 
+def str2bool(v):
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def add_shared_arguments(parser):
     parser.add_argument(
@@ -36,7 +45,7 @@ def add_shared_arguments(parser):
     parser.add_argument(
         "-v",
         "--verbose",
-        type=bool,
+        type=str2bool,
         default=False,
         help="print every prompt and response detail",
         required=False,
@@ -147,7 +156,7 @@ def main():
         required=False,
     )
     file_parser.add_argument(
-        "-r", "--retry", type=bool, default=True, help="", required=False
+        "-r", "--retry", type=str2bool, default=True, help="", required=False
     )
 
     args = parser.parse_args()
