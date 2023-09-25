@@ -2,10 +2,11 @@ import os
 import sys
 import argparse
 from oneapi import OneAPITool
+import asyncio
 sys.path.append( os.path.normpath(f"{os.path.dirname(os.path.abspath(__file__))}/../../"))
 from eval.prompt_template import prompter, prompts
 from eval.utils.data_utils import df_reader
-from eval.auto_llms_eval import eval_one_group, eval_one_qa, eval_groups, EvalConfig
+from eval.auto_llms_eval import eval_groups, EvalConfig, aeval_one_qa
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -170,7 +171,7 @@ def main():
 
     if args.command == "line":
         tool = OneAPITool.from_config_file(args.config_files[0])
-        score, raw_response = eval_one_qa(
+        score, raw_response = asyncio.run(aeval_one_qa(
             api_tool=tool,
             eval_prompter=eval_prompter,
             question=args.prompt,
@@ -179,7 +180,7 @@ def main():
             engine=args.model[0],
             temperature=args.temperature,
             max_new_tokens=args.max_new_tokens,
-        )
+        ))
         print(f"\nSCORE:\n{score}")
 
     elif args.command == "file":

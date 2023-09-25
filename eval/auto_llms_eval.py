@@ -18,34 +18,6 @@ sys.path.append(os.path.normpath(f'{os.path.dirname(os.path.abspath(__file__))}/
 from eval.utils import df_saver, df_reader, binary_cross_entropy
 from eval.prompt_template import Prompter
 
-def eval_one_qa(
-             api_tool: OneAPITool,
-             eval_prompter: Prompter,
-             question: str,
-             candidate_answers: List[str],
-             target: Union[str, None]='',
-             engine: str='',
-             temperature=0.1,
-             max_new_tokens=2048) -> Tuple[Union[List[float], None], str]:
-    raw_response = ''
-    shuffle_index = list(range(len(candidate_answers)))
-    np.random.shuffle(shuffle_index)
-    shuffle_answers = [candidate_answers[i] for i in shuffle_index]
-    eval_prompt = eval_prompter.generate_prompt(question, target,
-                                                shuffle_answers)
-    try:
-        raw_response = api_tool.simple_chat(eval_prompt,
-                                      model=engine,
-                                      temperature=temperature,
-                                      max_new_tokens=max_new_tokens, stream=False)
-        scores = eval_prompter.extract_result_from_response(raw_response)
-        scores = [scores[shuffle_index.index(i)] for i in range(len(scores))]
-        return scores, raw_response
-    except Exception as e:
-        print(f'error, request result:{raw_response}, exception:{e}')
-        traceback.print_exc()
-        return None, raw_response
-
 async def aeval_one_qa(
              api_tool: OneAPITool,
              eval_prompter: Prompter,
@@ -62,7 +34,7 @@ async def aeval_one_qa(
     eval_prompt = eval_prompter.generate_prompt(question, target,
                                                 shuffle_answers)
     try:
-        raw_response = await api_tool.asimple_chat(eval_prompt,
+        raw_response = await api_tool.achat(eval_prompt,
                                       model=engine,
                                       temperature=temperature,
                                       max_new_tokens=max_new_tokens)
@@ -73,37 +45,6 @@ async def aeval_one_qa(
         print(f'error, request result:{raw_response}, exception:{e}')
         traceback.print_exc()
         return None, raw_response
-
-def eval_one_group(
-    api_tool: OneAPITool,
-    eval_prompter: Prompter,
-    data_group: pd.DataFrame,
-    engine: str,
-    temperature=0.1,
-    max_new_tokens=2048,
-) -> Union[pd.DataFrame, None]:
-    group = data_group.reset_index(drop=True)
-    question = group['question'].unique()[0]
-    candidate_answers = group['output']
-    if 'target' in data_group.keys():
-        target = group['target'].unique()[0]
-    else:
-        target = ''
-    scores, raw_response = eval_one_qa(api_tool=api_tool,
-                      eval_prompter=eval_prompter,
-                      question=question,
-                      candidate_answers=candidate_answers,
-                      target=target,
-                      engine=engine,
-                      temperature=temperature,
-                      max_new_tokens=max_new_tokens)
-    if scores is not None and len(scores) == len(candidate_answers):
-        group.at[0, 'raw_response'] = raw_response
-        for i in range(len(scores)):
-            group.at[i, 'score'] = scores[i]
-        return group, True
-    else:
-        return data_group, False
 
         
 async def aeval_one_group(
@@ -278,44 +219,22 @@ def eval_groups(
         assert len(eval_config.engines) == process_num, f'Number of engines must be equal to number of api config files when specific multiple engines, but got {len(eval_config.engines)} engines and {process_num} api config files.'
 
     # Init api tool and prompter
-    if process_num == 1:
-        failed_groups = []
-        tool = OneAPITool.from_config_file(eval_config.api_config_files[0])
-        for group in tqdm(unscored_groups):
-            result, status = eval_one_group(tool, eval_config.eval_prompter,  group,  eval_config.engines[0], eval_config.temperature, eval_config.max_new_tokens)
-            if status:
-                scored_groups.append(result)
-            else:
-                failed_groups.append(group)
-            time.sleep(eval_config.request_interval)
-
-        # Retry failed requests
-        if len(failed_groups) > 0 and eval_config.retry:
-            retry_failed_groups = []
-            for group in tqdm(failed_groups, desc='RETRY'):
-                result, status = eval_one_group(tool, eval_config.eval_prompter,  group,  eval_config.engines[0], eval_config.temperature, eval_config.max_new_tokens)
-                if status:
-                    scored_groups.append(result)
-                else:
-                    retry_failed_groups.append(group)
-                time.sleep(eval_config.request_interval)
-    else:
-        score_results = asyncio.run(aeval_groups(eval_config, unscored_groups))
-        failed_groups = []
+    score_results = asyncio.run(aeval_groups(eval_config, unscored_groups))
+    failed_groups = []
+    for (result, status) in score_results:
+        if status:
+            scored_groups.append(result)
+        else:
+            failed_groups.append(result)
+    # Retry failed requests
+    if len(failed_groups) > 0 and eval_config.retry:
+        retry_failed_groups = []
+        score_results = asyncio.run(aeval_groups(eval_config, failed_groups, desc='RETRY'))
         for (result, status) in score_results:
             if status:
                 scored_groups.append(result)
             else:
-                failed_groups.append(result)
-        # Retry failed requests
-        if len(failed_groups) > 0 and eval_config.retry:
-            retry_failed_groups = []
-            score_results = asyncio.run(aeval_groups(eval_config, failed_groups, desc='RETRY'))
-            for (result, status) in score_results:
-                if status:
-                    scored_groups.append(result)
-                else:
-                    retry_failed_groups.append(result)
+                retry_failed_groups.append(result)
     failed_groups = retry_failed_groups if eval_config.retry and len(failed_groups) > 0 else failed_groups
     scored_results_df = pd.concat(scored_groups)
     log_score_results(eval_results_df=scored_results_df, score_by=eval_config.score_by)

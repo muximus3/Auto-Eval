@@ -1,2 +1,2 @@
-from .auto_llms_eval import eval_one_qa, eval_groups, eval_one_group, EvalConfig
+from .auto_llms_eval import eval_groups, EvalConfig, aeval_one_qa, aeval_one_group
 from eval.prompt_template import Prompter, EvalPrompter
