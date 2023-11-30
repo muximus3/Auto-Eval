@@ -162,15 +162,15 @@ def main():
 
     args = parser.parse_args()
     if args.template_path:
-        eval_prompter = prompter.EvalPrompter.from_config(args.template_path, verbose=args.verbose)
+        eval_prompter = prompter.EvalPrompter.from_config(args.template_path)
     else:
         if args.template_type in ['ec', 'e_commerce']:
-            eval_prompter = prompter.EvalPrompter(prompts.EVAL_WITH_TARGET_TEMPLATE_ECOMMERCE, prompts.EVAL_WITHOUT_TARGET_TEMPLATE_ECOMMERCE, args.verbose)
+            eval_prompter = prompter.EvalPrompter(prompts.EVAL_WITH_TARGET_TEMPLATE_ECOMMERCE, prompts.EVAL_WITHOUT_TARGET_TEMPLATE_ECOMMERCE)
         else:
-            eval_prompter = prompter.EvalPrompter(prompts.EVAL_WITH_TARGET_TEMPLATE, prompts.EVAL_WITHOUT_TARGET_TEMPLATE, args.verbose)
+            eval_prompter = prompter.EvalPrompter(prompts.EVAL_WITH_TARGET_TEMPLATE, prompts.EVAL_WITHOUT_TARGET_TEMPLATE)
 
     if args.command == "line":
-        tool = OneAPITool.from_config_file(args.config_files[0])
+        tool = OneAPITool.from_config(args.config_files[0])
         score, raw_response = asyncio.run(aeval_one_qa(
             api_tool=tool,
             eval_prompter=eval_prompter,
@@ -180,6 +180,7 @@ def main():
             engine=args.model[0],
             temperature=args.temperature,
             max_new_tokens=args.max_new_tokens,
+            verbose=args.verbose,
         ))
         print(f"\nSCORE:\n{score}")
 
@@ -201,6 +202,7 @@ def main():
                 score_by = args.score_by,
                 temperature=args.temperature,
                 max_new_tokens=args.max_new_tokens,
+                verbose=args.verbose,
             )
         )
 

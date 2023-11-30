@@ -14,24 +14,21 @@ class Prompter(abc.ABC):
         raise NotImplementedError
 
 class EvalPrompter(Prompter):
-    __slots__ = ( "eval_with_target_template", "eval_without_target_template", "_verbose")
+    __slots__ = ( "eval_with_target_template", "eval_without_target_template")
 
     @classmethod
-    def from_config(cls, prompt_template_file: str, verbose: bool = True):
+    def from_config(cls, prompt_template_file: str):
         if not os.path.exists(prompt_template_file):
             raise ValueError(f'File not exists:{prompt_template_file}')
         template_data = load_json(prompt_template_file)
         eval_with_target_template = template_data['eval_with_target_template']
         eval_without_target_template = template_data[ 'eval_without_target_template']
-        if verbose:
-            print(f'Using prompt template:\n {json.dumps(template_data, sort_keys=True, indent=2)}')
-        return cls(eval_with_target_template, eval_without_target_template, verbose)
+        return cls(eval_with_target_template, eval_without_target_template)
 
     def __init__(self,
                  eval_with_target_template: str,
                  eval_without_target_template: str,
-                 verbose: bool = True) -> None:
-        self._verbose = verbose
+                 ) -> None:
         self.eval_with_target_template = eval_with_target_template
         self.eval_without_target_template = eval_without_target_template
 
@@ -52,20 +49,13 @@ class EvalPrompter(Prompter):
         else:
             eval_prompt = self.eval_without_target_template.format(
                 question=question, answers=format_option_data)
-        if self._verbose:
-            print(
-                f"\n{'-'*20} prompt detail 🚀  {'-'*20}\n\n{eval_prompt}\n\n{'-'*20} prompt end {'-'*20}"
-            )
+
         return eval_prompt
 
     def extract_result_from_response(self, response: str) -> List[float]:
         """
         Extract the result (scores) from the given model response.
         """
-        if self._verbose:
-            print(
-                f"{'-'*20} response detail ⭐️ {'-'*20}\n\n{response}\n\n{'-'*20} response end {'-'*20}\n"
-            )
         try:
             result_json = extract_last_json(response.strip())
         except (AttributeError, json.decoder.JSONDecodeError):
