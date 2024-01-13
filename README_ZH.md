@@ -301,7 +301,7 @@ Finally, output all [Candidate answers] scores (0-1) in a summary format of
 
 使用哪个采样温度。更高的值（例如1）会使输出更随机，而较低的值（例如0.1）会使其更加集中和确定性。
 
-`--max_new_tokens` number ${\color{grey}\text{可选}}$ 默认为 2048
+`--max_tokens` number ${\color{grey}\text{可选}}$ 默认为 2048
 
 生成的最大字符数。模型的上下文长度限制了输入输出的总长度。
 

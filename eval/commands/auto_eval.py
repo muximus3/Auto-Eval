@@ -3,28 +3,34 @@ import sys
 import argparse
 from oneapi import OneAPITool
 import asyncio
-sys.path.append( os.path.normpath(f"{os.path.dirname(os.path.abspath(__file__))}/../../"))
+
+sys.path.append(
+    os.path.normpath(f"{os.path.dirname(os.path.abspath(__file__))}/../../")
+)
 from eval.prompt_template import prompter, prompts
 from eval.utils.data_utils import df_reader
 from eval.auto_llms_eval import eval_groups, EvalConfig, aeval_one_qa
 
+
 def str2bool(v):
     if isinstance(v, bool):
-       return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return v
+    if v.lower() in ("yes", "true", "t", "y", "1"):
         return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+    elif v.lower() in ("no", "false", "f", "n", "0"):
         return False
     else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
+        raise argparse.ArgumentTypeError("Boolean value expected.")
+
 
 def add_shared_arguments(parser):
     parser.add_argument(
-        "-c", "--config_files",
+        "-c",
+        "--config_files",
         default=None,
-        nargs="+", 
-        help="config file path", 
-        required=True
+        nargs="+",
+        help="config file path",
+        required=True,
     )
     parser.add_argument(
         "-tp",
@@ -39,7 +45,7 @@ def add_shared_arguments(parser):
         "--template_type",
         type=str,
         default=None,
-        help="Chosing default template_type: g means \"general\", ec means \"e_commerce\"",
+        help='Chosing default template_type: g means "general", ec means "e_commerce"',
         required=False,
     )
 
@@ -55,7 +61,7 @@ def add_shared_arguments(parser):
         "-m",
         "--model",
         default=None,
-        nargs="+", 
+        nargs="+",
         help="evaluate model name, e.g., gpt-35-turbo, gpt-4, please using larger models like GPT-4 for more difficult questions and faster models like GPT-3.5-turbo for simpler ones.",
         required=False,
     )
@@ -69,7 +75,7 @@ def add_shared_arguments(parser):
     )
     parser.add_argument(
         "-mnt",
-        "--max_new_tokens",
+        "--max_tokens",
         type=int,
         default=2048,
         help="max output token length",
@@ -164,24 +170,31 @@ def main():
     if args.template_path:
         eval_prompter = prompter.EvalPrompter.from_config(args.template_path)
     else:
-        if args.template_type in ['ec', 'e_commerce']:
-            eval_prompter = prompter.EvalPrompter(prompts.EVAL_WITH_TARGET_TEMPLATE_ECOMMERCE, prompts.EVAL_WITHOUT_TARGET_TEMPLATE_ECOMMERCE)
+        if args.template_type in ["ec", "e_commerce"]:
+            eval_prompter = prompter.EvalPrompter(
+                prompts.EVAL_WITH_TARGET_TEMPLATE_ECOMMERCE,
+                prompts.EVAL_WITHOUT_TARGET_TEMPLATE_ECOMMERCE,
+            )
         else:
-            eval_prompter = prompter.EvalPrompter(prompts.EVAL_WITH_TARGET_TEMPLATE, prompts.EVAL_WITHOUT_TARGET_TEMPLATE)
+            eval_prompter = prompter.EvalPrompter(
+                prompts.EVAL_WITH_TARGET_TEMPLATE, prompts.EVAL_WITHOUT_TARGET_TEMPLATE
+            )
 
     if args.command == "line":
         tool = OneAPITool.from_config(args.config_files[0])
-        score, raw_response = asyncio.run(aeval_one_qa(
-            api_tool=tool,
-            eval_prompter=eval_prompter,
-            question=args.prompt,
-            candidate_answers=args.answers,
-            target=args.target,
-            engine=args.model[0],
-            temperature=args.temperature,
-            max_new_tokens=args.max_new_tokens,
-            verbose=args.verbose,
-        ))
+        score, eval_prompt, eval_response = asyncio.run(
+            aeval_one_qa(
+                api_tool=tool,
+                eval_prompter=eval_prompter,
+                question=args.prompt,
+                candidate_answers=args.answers,
+                target=args.target,
+                engine=args.model[0],
+                temperature=args.temperature,
+                max_tokens=args.max_tokens,
+                verbose=args.verbose,
+            )
+        )
         print(f"\nSCORE:\n{score}")
 
     elif args.command == "file":
@@ -199,9 +212,9 @@ def main():
                 sample_num=args.sample_num,
                 request_interval=args.interval,
                 retry=args.retry,
-                score_by = args.score_by,
+                score_by=args.score_by,
                 temperature=args.temperature,
-                max_new_tokens=args.max_new_tokens,
+                max_tokens=args.max_tokens,
                 verbose=args.verbose,
             )
         )

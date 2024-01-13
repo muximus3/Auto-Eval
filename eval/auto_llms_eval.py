@@ -19,18 +19,22 @@ from eval.prompt_template import Prompter
 
 
 def prepare_eval_data(
-    eval_data_path: List[str],
+    eval_data: Optional[pd.DataFrame] = None,
+    eval_data_path: Optional[List[str]] = None,
     eval_categories: Optional[List[str]] = None,
     question_column_names: Optional[List[str]] = None,
     answer_column_names: Optional[List[str]] = None,
     sample_num: int = 0,
     eval_models: Optional[List[str]] = None,
 ) -> Tuple[List[pd.DataFrame], List[pd.DataFrame]]:
-    eval_data = (
-        df_reader(eval_data_path[0])
-        if len(eval_data_path) == 1
-        else pd.concat([df_reader(file_path) for file_path in eval_data_path])
-    )
+    if eval_data_path is not None and eval_data is not None:
+        raise ValueError("Either eval_data or eval_data_path must be provided.")
+    if eval_data_path and not eval_data:
+        eval_data = (
+            df_reader(eval_data_path[0])
+            if len(eval_data_path) == 1
+            else pd.concat([df_reader(file_path) for file_path in eval_data_path])
+        )
     eval_data = eval_data.fillna("")
     # Deal with different data formats
     if question_column_names is not None:
@@ -40,6 +44,8 @@ def prepare_eval_data(
             )
         else:
             eval_data["question"] = eval_data[question_column_names[0]]
+
+    # if answers are in multiple columns, concat them into one column
     if answer_column_names is not None:
         if len(answer_column_names) > 1:
             eval_data["output"] = (
@@ -50,20 +56,19 @@ def prepare_eval_data(
 
     if len({"question", "output"} - set(eval_data.keys())) == 0:
         pass
-    elif len({"instruction", "input", "output"} - set(eval_data.keys())) == 0:
+    
+    # fromat data to question and output
+    if len({"instruction", "input"} - set(eval_data.keys())) == 0:
         eval_data["question"] = eval_data["instruction"].str.cat(
             eval_data["input"], sep=" "
         )
-    elif len({"prompt", "output"} - set(eval_data.keys())) == 0:
-        eval_data["quesion"] = eval_data["prompt"].copy()
-    elif len({"question", "answer"} - set(eval_data.keys())) == 0:
+    elif "prompt" in eval_data.keys():
+        eval_data["question"] = eval_data["prompt"].copy()
+    
+    if "target" in eval_data.keys():
+        eval_data["output"] = eval_data["target"].astype(str)
+    elif "answer" in eval_data.keys() == 0:
         eval_data["output"] = eval_data["answer"].copy()
-    elif len({"question", "target"} - set(eval_data.keys())) == 0:
-        eval_data["output"] = eval_data["target"].copy()
-    else:
-        raise KeyError(
-            f'Eval data columns must be either: ["instruction", "input", "output"] or ["prompt", "output"] or ["question", "output"] or ["question", "target"] or ["question", "answer"]'
-        )
 
     # filter specific categories
     if (
@@ -72,9 +77,19 @@ def prepare_eval_data(
         and "category" in eval_data.keys()
     ):
         eval_data = eval_data[eval_data["category"].isin(eval_categories)]
-    if eval_models is not None and len(eval_models) > 0 and "model" in eval_data.keys():
+    # default is vertical format, output of each model is in a column
+    # In a horizontal format, we assume that each row corresponds to a different question
+    # and the columns represent different model names and their outputs (the column name is the model name).
+    # Note: In the horizontal format, we assume that output columns are prefixed with 'output_' followed by the model name.
+    # Adjust the prefix as per your dataset's column naming convention.
+    if "model" not in eval_data.keys():
+        eval_data = pd.melt(eval_data, id_vars=["question"], var_name="model", value_name="output", value_vars=[col for col in eval_data.columns if col.startswith('output_')])
+        eval_data['model'] = eval_data['model'].str.replace('output_', '')
+
+    if eval_models is not None and len(eval_models) > 0:
         eval_data = eval_data[eval_data["model"].isin(eval_models)]
     grouped = eval_data.groupby(by=["question"])
+    
     if sample_num > 0:
         sample_keys = random.sample(grouped.groups.keys(), sample_num)
     else:
@@ -166,35 +181,35 @@ async def aeval_one_qa(
     target: Union[str, None] = "",
     engine: str = "",
     temperature=0.1,
-    max_new_tokens=2048,
+    max_tokens=2048,
     verbose=True,
 ) -> Tuple[Union[List[float], None], str]:
-    raw_response = ""
+    eval_response = ""
     shuffle_index = list(range(len(candidate_answers)))
     np.random.shuffle(shuffle_index)
     shuffle_answers = [candidate_answers[i] for i in shuffle_index]
     eval_prompt = eval_prompter.generate_prompt(question, target, shuffle_answers)
     try:
-        raw_response = await api_tool.achat(
+        eval_response = await api_tool.achat(
             eval_prompt,
             model=engine,
             temperature=temperature,
-            max_new_tokens=max_new_tokens,
+            max_tokens=max_tokens,
         )
         if verbose:
             print(
                 f"\n{'-'*20} prompt detail 🚀  {'-'*20}\n\n{eval_prompt}\n\n{'-'*20} prompt end {'-'*20}"
             )
             print(
-                f"{'-'*20} response detail ⭐️ {'-'*20}\n\n{raw_response}\n\n{'-'*20} response end {'-'*20}\n"
+                f"{'-'*20} response detail ⭐️ {'-'*20}\n\n{eval_response}\n\n{'-'*20} response end {'-'*20}\n"
             )
-        scores = eval_prompter.extract_result_from_response(raw_response)
+        scores = eval_prompter.extract_result_from_response(eval_response)
         scores = [scores[shuffle_index.index(i)] for i in range(len(scores))]
-        return scores, raw_response
+        return scores, eval_prompt, eval_response
     except (Exception, asyncio.CancelledError) as e:
-        print(f"error, request result:{raw_response}, exception:{e}")
+        print(f"error, request result:{eval_response}, exception:{e}")
         traceback.print_exc()
-        return None, raw_response
+        return None, eval_prompt, eval_response
 
 
 async def aeval_one_group(
@@ -203,7 +218,7 @@ async def aeval_one_group(
     data_group: pd.DataFrame,
     engine: str,
     temperature=0.1,
-    max_new_tokens=2048,
+    max_tokens=2048,
     verbose=True,
 ) -> Union[pd.DataFrame, None]:
     group = data_group.reset_index(drop=True)
@@ -213,7 +228,7 @@ async def aeval_one_group(
         target = group["target"].unique()[0]
     else:
         target = ""
-    scores, raw_response = await aeval_one_qa(
+    scores, eval_prompt, eval_response = await aeval_one_qa(
         api_tool=api_tool,
         eval_prompter=eval_prompter,
         question=question,
@@ -221,11 +236,12 @@ async def aeval_one_group(
         target=target,
         engine=engine,
         temperature=temperature,
-        max_new_tokens=max_new_tokens,
+        max_tokens=max_tokens,
         verbose=verbose,
     )
     if scores is not None and len(scores) == len(candidate_answers):
-        group.at[0, "raw_response"] = raw_response
+        group.at[0, "eval_prompt"] = eval_prompt
+        group.at[0, "eval_response"] = eval_response
         for i in range(len(scores)):
             group.at[i, "score"] = scores[i]
         return group, True
@@ -249,7 +265,7 @@ class EvalConfig:
     request_interval: int = 1
     retry: bool = True
     temperature: float = 0.1
-    max_new_tokens: int = 2048
+    max_tokens: int = 2048
     verbose: bool = True
 
 
@@ -348,7 +364,7 @@ async def aeval_groups(
                 group,
                 eval_config.engines[i % process_num],
                 eval_config.temperature,
-                eval_config.max_new_tokens,
+                eval_config.max_tokens,
                 eval_config.verbose,
             )
         )

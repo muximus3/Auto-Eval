@@ -16,6 +16,12 @@ Assuming we have a test set, we can use any model to make predictions and save t
 | What is 1+1? | 2 | model_b | Arithmetic |
 | What is the capital of France? | Paris | model_b | General Knowledge |
 
+or
+| prompt | output_model_a | ouput_model_b | category |
+| --- | --- | --- | --- |
+| What is 1+1? | 3 |2|Arithmetic |
+| What is the capital of France? | Paris | Paris| General Knowledge |
+
  The "prompt" column represents the input question, while the "output" column displays the model's output. In addition, the "model" column indicates the name of the model used, and finally, the "category" column specifies the type of task for each question.
 
 Our next step is to utilize GPT-4 to evaluate and score our model's predictions. We have chosen this approach because current language models fine-tuned by instructions lack suitable evaluation metrics. Manual evaluation is also not feasible due to its high cost and time consumption, which makes it unsuitable for frequent experiments and evaluations.
@@ -176,7 +182,9 @@ auto-eval file --config_file CHANGE_TO_YOUR_CONFIG_PATH \
     -  `{"prompt", "output"}`
     -  `{"question", "answer"}`
     -  `{"question", "output"}` 
-    - `{"question", "target"}`<br>
+    - `{"question", "target"}`
+    - `{"question", "output_model_a", "output_model_b", "output_model_c"}`
+    - ...<br>
 
     The "question," "prompt," and "instruction" + "input" refer to the original inquiry, such as "Please calculate carefully: 1+1=?" or "Explain landing on the moon like I am five." The  "answer" and "output" represent the predicted answer of the model for a given question. If the format is in an {"instruction", "input"} form, we will concatenate both elements to create a complete question. <br>
 
@@ -247,7 +255,7 @@ If you want to use a custom template, make sure it has slots for "question", "an
 
 `--temperature` number ${\color{grey}\text{Optional}}$ Defaults to 1 <br>What sampling temperature to use.  Higher values like 1 will make the output more random, while lower values like 0.1 will make it more focused and deterministic.
 
-`--max_new_tokens` integer ${\color{grey}\text{Optional}}$ Defaults to 2048 <br>
+`--max_tokens` integer ${\color{grey}\text{Optional}}$ Defaults to 2048 <br>
 The maximum number of tokens to generate in the chat completion.
 The total length of input tokens and generated tokens is limited by the model's context length.
 
